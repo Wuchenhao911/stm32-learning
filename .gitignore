@@ -1,0 +1,14 @@
+# ===== Keil MDK 编译产物 =====
+Objects/
+Listings/
+DebugConfig/
+RTE/
+*.uvguix.*
+*.uvoptx
+*.scvd
+
+# ===== 其他杂项 =====
+*.bak
+*.orig
+Thumbs.db
+.DS_Store
