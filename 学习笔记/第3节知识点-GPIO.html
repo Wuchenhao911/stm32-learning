@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 3 节 交互式知识点 · GPIO（江科大 P5-P8）</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --border:#e2e8f0;
+    --text:#1e293b; --muted:#64748b;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --green:#059669; --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --orange:#d97706; --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --red:#dc2626; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.8;padding:24px 16px;}
+  .wrap{max-width:960px;margin:0 auto;}
+
+  .hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:24px 28px;margin-bottom:20px;}
+  .hero h1{font-size:24px;margin-bottom:4px;}
+  .hero .sub{opacity:.9;font-size:13px;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;}
+  .card-head{padding:12px 22px;background:var(--blue-bg);border-bottom:1px solid var(--border);font-weight:600;color:var(--blue);font-size:15px;display:flex;align-items:center;gap:10px;}
+  .card-head .num{background:var(--blue);color:#fff;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .card-body{padding:18px 22px;}
+
+  p{margin:5px 0;}
+  ul,ol{margin:6px 0 6px 22px;}
+  li{margin:3px 0;}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;}
+  th{background:var(--blue-bg);color:var(--blue);text-align:left;padding:8px 12px;border:1px solid var(--border);font-weight:600;}
+  td{padding:8px 12px;border:1px solid var(--border);}
+  tr:nth-child(even) td{background:#f8fafc;}
+
+  pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:14px 18px;overflow-x:auto;font-size:13px;line-height:1.7;margin:10px 0;}
+  code{font-family:"Consolas","Courier New",monospace;}
+
+  .note{border-radius:10px;padding:10px 14px;margin:10px 0;font-size:13.5px;border:1px solid transparent;}
+  .note.key{background:var(--blue-bg);border-color:var(--blue-bd);color:#1e3a8a;}
+  .note.warn{background:var(--orange-bg);border-color:var(--orange-bd);color:#92400e;}
+  .note.danger{background:var(--red-bg);border-color:var(--red-bd);color:#991b1b;}
+  .note.ok{background:var(--green-bg);border-color:var(--green-bd);color:#065f46;}
+  .note .t{font-weight:700;margin-right:6px;}
+
+  /* 电路区 */
+  .circuit-wrap{display:flex;justify-content:center;margin:14px 0;}
+  .ctl{display:flex;gap:10px;justify-content:center;margin:12px 0;flex-wrap:wrap;}
+  .btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;}
+  .btn-high{background:#059669;color:#fff;}
+  .btn-high:hover{background:#047857;}
+  .btn-low{background:#dc2626;color:#fff;}
+  .btn-low:hover{background:#b91c1c;}
+  .btn-ghost{background:#eef2f7;color:var(--text);}
+  .btn-ghost:hover{background:#e2e8f0;}
+  .btn.act{outline:3px solid #93c5fd;}
+  .status{text-align:center;font-size:14px;margin-top:8px;}
+  .status b.hi{color:#059669;}
+  .status b.lo{color:#dc2626;}
+  .status .chip{display:inline-block;padding:2px 12px;border-radius:6px;font-weight:700;}
+
+  .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0;}
+  .mode-cell{border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;transition:all .2s;background:#f8fafc;}
+  .mode-cell:hover{border-color:var(--blue);background:var(--blue-bg);}
+  .mode-cell .m-name{font-weight:700;font-size:13.5px;}
+  .mode-cell .m-desc{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  @media(max-width:640px){.mode-grid{grid-template-columns:1fr;}}
+
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0;font-size:13.5px;}
+  .flow .step{background:var(--blue-bg);border:1px solid var(--blue-bd);color:#1e3a8a;border-radius:8px;padding:6px 12px;font-weight:600;}
+  .flow .arrow{color:var(--blue);font-weight:700;}
+
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>第 3 节 交互式知识点 · GPIO</h1>
+    <div class="sub">江科大 P5 [3-1] GPIO输出理论 · P6 [3-2] LED/流水灯/蜂鸣器 · P7 [3-3] GPIO输入理论 · P8 [3-4] 按键/光敏 · 点击电路交互</div>
+  </div>
+
+  <!-- ========== 0. GPIO 是什么 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">0</div>GPIO 是什么（先建立直觉）</div>
+    <div class="card-body">
+      <p><b>GPIO</b> = General Purpose Input/Output，通用输入输出口。<b>一句话：芯片内部的一个"可编程开关"，既能对外输出 0/1，也能读外部输入的 0/1。</b></p>
+      <ul>
+        <li>F103 有 GPIOA~GPIOE 五组（A/B/C/D/E），每组 <b>16 个引脚</b>（PIN0~PIN15）</li>
+        <li>每个引脚内部有一堆"可配置的电路"（MOS 管、上下拉电阻），<b>配置成什么模式，引脚就表现成什么样</b></li>
+        <li>后面所有外设（OLED、按键、PWM、ADC…）<b>最终都是通过 GPIO 引脚进出芯片的</b></li>
+      </ul>
+      <div class="note key"><span class="t">核心套路（背下来）</span>所有 GPIO 用法只有 4 步：<b>① 开时钟 → ② 配结构体（模式）→ ③ GPIO_Init → ④ 读写</b>。<br>区别只在第 ② 步的模式和④步的读写函数。</div>
+    </div>
+  </div>
+
+  <!-- ========== 1. 推挽输出 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">1</div>推挽输出（GPIO_Mode_Out_PP）· 电路动画</div>
+    <div class="card-body">
+      <p><b>推挽 = 两个开关一上一下</b>。上面的开关连 3.3V（电源），下面的开关连 GND（地）。任何时候只有一个闭合：</p>
+      <div class="circuit-wrap">
+        <svg id="sv-pp" viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+          <style>
+            .wire{stroke:#64748b;stroke-width:2;fill:none}
+            .wire-r{stroke:#dc2626;stroke-width:2;fill:none}
+            .txt{font-family:Microsoft YaHei,monospace;font-size:12px;fill:#1e293b}
+            .txt-dim{font-family:Microsoft YaHei,monospace;font-size:11px;fill:#64748b}
+            .sw{stroke:#2563eb;stroke-width:2.5;fill:#eff6ff}
+            .sw-node{fill:#fff;stroke:#2563eb;stroke-width:2}
+            .led-body{fill:#fef2f2;stroke:#dc2626;stroke-width:1.5}
+            .led-anode{stroke:#dc2626;stroke-width:2}
+            .led-cathode{stroke:#64748b;stroke-width:2}
+            .led-glow{fill:#f87171;opacity:0}
+            .chip-box{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:4 3}
+          </style>
+          <!-- 芯片框 -->
+          <rect class="chip-box" x="20" y="40" width="230" height="220" rx="10"/>
+          <text class="txt-dim" x="30" y="60">STM32 内部</text>
+          <!-- VDD -->
+          <line class="wire-r" x1="60" y1="80" x2="150" y2="80"/>
+          <text class="txt" x="30" y="84">VDD 3.3V</text>
+          <!-- 上开关（P管） -->
+          <rect class="sw" id="sw-up" x="140" y="68" width="40" height="26" rx="5"/>
+          <text class="txt" x="160" y="85" text-anchor="middle" id="sw-up-t">开</text>
+          <line class="wire" x1="160" y1="94" x2="160" y2="120"/>
+          <!-- 输出节点 -->
+          <circle class="sw-node" cx="160" cy="135" r="6"/>
+          <text class="txt" x="175" y="139">输出节点</text>
+          <!-- 下开关（N管） -->
+          <line class="wire" x1="160" y1="141" x2="160" y2="168"/>
+          <rect class="sw" id="sw-dn" x="140" y="170" width="40" height="26" rx="5"/>
+          <text class="txt" x="160" y="187" text-anchor="middle" id="sw-dn-t">关</text>
+          <!-- GND -->
+          <line class="wire" x1="160" y1="196" x2="160" y2="228"/>
+          <line class="wire" x1="130" y1="228" x2="190" y2="228"/>
+          <line class="wire" x1="130" y1="228" x2="130" y2="240"/>
+          <line class="wire" x1="150" y1="240" x2="170" y2="240"/>
+          <text class="txt" x="140" y="256" text-anchor="middle">GND</text>
+          <!-- 输出引出到引脚 -->
+          <line class="wire" x1="166" y1="135" x2="250" y2="135"/>
+          <circle class="sw-node" cx="262" cy="135" r="7"/>
+          <text class="txt" x="262" y="125" text-anchor="middle">PA4</text>
+          <text class="txt-dim" x="262" y="152" text-anchor="middle" id="pin-volt-pp">= 0V</text>
+          <!-- 外部电路：LED -->
+          <line class="wire" x1="282" y1="135" x2="330" y2="135"/>
+          <rect class="led-body" x="330" y="122" width="34" height="26" rx="4"/>
+          <line class="led-anode" x1="335" y1="122" x2="335" y2="148"/>
+          <line class="led-cathode" x1="359" y1="122" x2="359" y2="148"/>
+          <circle class="led-glow" id="led-glow-pp" cx="347" cy="135" r="9"/>
+          <line class="wire" x1="364" y1="135" x2="400" y2="135"/>
+          <rect x="400" y="127" width="36" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text class="txt-dim" x="418" y="139" text-anchor="middle">R</text>
+          <line class="wire-r" x1="436" y1="135" x2="470" y2="135"/>
+          <line class="wire-r" x1="470" y1="135" x2="470" y2="80"/>
+          <text class="txt" x="478" y="84">VCC</text>
+          <text class="txt-dim" x="352" y="172" text-anchor="middle">LED</text>
+        </svg>
+      </div>
+      <div class="ctl">
+        <button class="btn btn-high" onclick="ppSet(1)">输出 1（高电平）</button>
+        <button class="btn btn-low" onclick="ppSet(0)">输出 0（低电平）</button>
+      </div>
+      <div class="status" id="pp-status"></div>
+      <div class="note key"><span class="t">看懂了什么</span>推挽输出的"推"和"挽"：<b>输出 1 = 上开关闭合，把引脚"推"到 3.3V</b>（此时下开关断开）；<b>输出 0 = 下开关闭合，把引脚"挽"到 GND</b>（上开关断开）。<b>两个方向都有强驱动能力</b>——所以叫"推挽"。</div>
+      <div class="note warn"><span class="t">LED 亮灭看接法</span>上图 LED 阳极接 VCC、阴极接 GPIO——<b>GPIO 输出 0 时电流从 VCC→LED→引脚→GND，灯亮</b>；输出 1 时两边都是高，没电流，灯灭。这就是蓝板 LED"低电平点亮"的原因。</div>
+    </div>
+  </div>
+
+  <!-- ========== 2. 开漏输出 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">2</div>开漏输出（GPIO_Mode_Out_OD）· 对比</div>
+    <div class="card-body">
+      <p><b>开漏 = 只有下开关，没有上开关</b>。输出 1 时引脚"悬空"（靠外部上拉电阻拉到高）：</p>
+      <div class="circuit-wrap">
+        <svg id="sv-od" viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+          <style>
+            .wire{stroke:#64748b;stroke-width:2;fill:none}
+            .wire-r{stroke:#dc2626;stroke-width:2;fill:none}
+            .txt{font-family:Microsoft YaHei,monospace;font-size:12px;fill:#1e293b}
+            .txt-dim{font-family:Microsoft YaHei,monospace;font-size:11px;fill:#64748b}
+            .sw{stroke:#2563eb;stroke-width:2.5;fill:#eff6ff}
+            .sw-node{fill:#fff;stroke:#2563eb;stroke-width:2}
+            .chip-box{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:4 3}
+          </style>
+          <rect class="chip-box" x="20" y="40" width="230" height="200" rx="10"/>
+          <text class="txt-dim" x="30" y="60">STM32 内部（没有上管！）</text>
+          <!-- 输出节点 -->
+          <circle class="sw-node" cx="160" cy="100" r="6"/>
+          <text class="txt" x="180" y="104">输出节点</text>
+          <!-- 下开关 -->
+          <line class="wire" x1="160" y1="106" x2="160" y2="130"/>
+          <rect class="sw" id="sw-od" x="140" y="132" width="40" height="26" rx="5"/>
+          <text class="txt" x="160" y="149" text-anchor="middle" id="sw-od-t">关</text>
+          <line class="wire" x1="160" y1="158" x2="160" y2="190"/>
+          <line class="wire" x1="130" y1="190" x2="190" y2="190"/>
+          <line class="wire" x1="130" y1="190" x2="130" y2="202"/>
+          <line class="wire" x1="150" y1="202" x2="170" y2="202"/>
+          <text class="txt" x="140" y="218" text-anchor="middle">GND</text>
+          <!-- 输出 -->
+          <line class="wire" x1="166" y1="100" x2="250" y2="100"/>
+          <circle class="sw-node" cx="262" cy="100" r="7"/>
+          <text class="txt" x="262" y="90" text-anchor="middle">PA4</text>
+          <text class="txt-dim" x="262" y="117" text-anchor="middle" id="pin-volt-od">= ?V</text>
+          <!-- 外部上拉 -->
+          <line class="wire-r" x1="280" y1="100" x2="320" y2="100"/>
+          <rect x="320" y="92" width="36" height="16" rx="3" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+          <text class="txt-dim" x="338" y="104" text-anchor="middle">R↑</text>
+          <line class="wire-r" x1="356" y1="100" x2="356" y2="60"/>
+          <line class="wire-r" x1="356" y1="60" x2="400" y2="60"/>
+          <text class="txt" x="406" y="64">VDD</text>
+          <text class="txt-dim" x="344" y="128" text-anchor="middle">外部上拉电阻</text>
+          <text class="txt-dim" x="340" y="150" text-anchor="middle">（I2C 等总线协议需要它）</text>
+        </svg>
+      </div>
+      <div class="ctl">
+        <button class="btn btn-high" onclick="odSet(1)">输出 1</button>
+        <button class="btn btn-low" onclick="odSet(0)">输出 0</button>
+      </div>
+      <div class="status" id="od-status"></div>
+      <table>
+        <tr><th></th><th>推挽 PP</th><th>开漏 OD</th></tr>
+        <tr><td>输出 1</td><td>上管闭合，引脚=3.3V（强驱动）</td><td>无上管，引脚靠外部上拉</td></tr>
+        <tr><td>输出 0</td><td>下管闭合，引脚=0V</td><td>下管闭合，引脚=0V（一样）</td></tr>
+        <tr><td>用途</td><td>LED、普通 IO</td><td>I2C、电平转换、总线（多设备共线）</td></tr>
+      </table>
+      <div class="note key"><span class="t">记忆</span><b>推挽</b>：强推强拉，普通场合首选。<b>开漏</b>：只能拉低，"拉高"靠别人（外部上拉）——I2C 总线所有设备都是开漏，才允许"线与"。</div>
+    </div>
+  </div>
+
+  <!-- ========== 3. 输入模式 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">3</div>输入模式（上拉/下拉/浮空）· 按键电路交互</div>
+    <div class="card-body">
+      <p><b>输入 = 引脚只"读"不"写"</b>。关键是内部有没有"默认电平"：</p>
+      <div class="circuit-wrap">
+        <svg id="sv-in" viewBox="0 0 560 330" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+          <style>
+            .wire{stroke:#64748b;stroke-width:2;fill:none}
+            .wire-r{stroke:#dc2626;stroke-width:2;fill:none}
+            .wire-g{stroke:#059669;stroke-width:2;fill:none}
+            .txt{font-family:Microsoft YaHei,monospace;font-size:12px;fill:#1e293b}
+            .txt-dim{font-family:Microsoft YaHei,monospace;font-size:11px;fill:#64748b}
+            .sw{stroke:#2563eb;stroke-width:2.5;fill:#eff6ff}
+            .sw-node{fill:#fff;stroke:#2563eb;stroke-width:2}
+            .chip-box{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:4 3}
+            .btn-sw{fill:#eef2f7;stroke:#475569;stroke-width:2}
+          </style>
+          <rect class="chip-box" x="20" y="40" width="260" height="250" rx="10"/>
+          <text class="txt-dim" x="30" y="60">STM32 内部（输入模式）</text>
+          <!-- 上拉开关 -->
+          <line class="wire-r" x1="60" y1="110" x2="120" y2="110"/>
+          <text class="txt" x="30" y="114">VDD</text>
+          <rect class="sw" id="sw-pu" x="120" y="98" width="34" height="24" rx="5"/>
+          <text class="txt" x="137" y="114" text-anchor="middle" id="sw-pu-t">关</text>
+          <line class="wire" x1="154" y1="110" x2="180" y2="110"/>
+          <!-- 输入节点 -->
+          <circle class="sw-node" cx="195" cy="110" r="6"/>
+          <text class="txt" x="207" y="95" id="in-lev-txt">电平: ?</text>
+          <!-- 下拉开关 -->
+          <line class="wire-g" x1="154" y1="190" x2="180" y2="190"/>
+          <rect class="sw" id="sw-pd" x="120" y="178" width="34" height="24" rx="5"/>
+          <text class="txt" x="137" y="194" text-anchor="middle" id="sw-pd-t">关</text>
+          <line class="wire" x1="60" y1="190" x2="120" y2="190"/>
+          <text class="txt" x="30" y="194">GND</text>
+          <line class="wire" x1="195" y1="116" x2="195" y2="190"/>
+          <!-- 引脚出来 -->
+          <line class="wire" x1="201" y1="110" x2="280" y2="110"/>
+          <circle class="sw-node" cx="292" cy="110" r="7"/>
+          <text class="txt" x="292" y="100" text-anchor="middle">PB1</text>
+          <!-- 外部按键 -->
+          <line class="wire" x1="312" y1="110" x2="360" y2="110"/>
+          <g id="key-sw" cursor="pointer">
+            <rect class="btn-sw" x="360" y="92" width="60" height="36" rx="6"/>
+            <text class="txt" x="390" y="115" text-anchor="middle">KEY</text>
+          </g>
+          <line class="wire" x1="420" y1="110" x2="470" y2="110"/>
+          <line class="wire" id="key-gnd-wire" x1="470" y1="110" x2="470" y2="250"/>
+          <line class="wire" x1="440" y1="250" x2="500" y2="250"/>
+          <line class="wire" x1="440" y1="250" x2="440" y2="262"/>
+          <line class="wire" x1="460" y1="262" x2="480" y2="262"/>
+          <text class="txt" x="450" y="280" text-anchor="middle">GND</text>
+          <text class="txt-dim" x="470" y="120" text-anchor="middle">按键另一端 → 接哪?</text>
+        </svg>
+      </div>
+      <div class="ctl">
+        <span style="font-size:13px;font-weight:600;align-self:center">引脚默认电平：</span>
+        <button class="btn btn-ghost" id="btn-pu" onclick="inMode('pu')">上拉 IPU</button>
+        <button class="btn btn-ghost" id="btn-pd" onclick="inMode('pd')">下拉 IPD</button>
+        <button class="btn btn-ghost" id="btn-fl" onclick="inMode('fl')">浮空</button>
+        <button class="btn btn-high" onclick="keyPress()">按下 KEY</button>
+      </div>
+      <div class="status" id="in-status"></div>
+      <table>
+        <tr><th>模式</th><th>不按（默认）</th><th>按下 KEY 后</th><th>用途</th></tr>
+        <tr><td>上拉 IPU</td><td>读到 <b>1</b></td><td>按键接地 → 读到 0</td><td>按键接 GND（低有效，教程默认）</td></tr>
+        <tr><td>下拉 IPD</td><td>读到 <b>0</b></td><td>按键接 3.3V → 读到 1</td><td>按键接 VCC（高有效）</td></tr>
+        <tr><td>浮空</td><td>不确定（悬空乱跳）</td><td>取决于按键接哪</td><td>模拟信号、外部已上/下拉</td></tr>
+      </table>
+      <div class="note danger"><span class="t">这是你 1008 踩过的坑！</span>按键配置<b>必须和按键另一端的接法匹配</b>：<br>
+      按键另一端接 <b>GND</b> → 用 <code>IPU</code> + 判断 <code>==0</code>；<br>
+      按键另一端接 <b>3.3V</b> → 用 <code>IPD</code> + 判断 <code>==1</code>。<br>
+      配反了 = 按了没反应（当时折腾了半小时最后发现是面包板虚接 😅）。</div>
+    </div>
+  </div>
+
+  <!-- ========== 4. 八种模式 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">4</div>八种模式总览（点击卡片看解释）</div>
+    <div class="card-body">
+      <div class="mode-grid">
+        <div class="mode-cell"><div class="m-name">输入 · 浮空 <code>GPIO_Mode_IN_FLOATING</code></div><div class="m-desc">引脚悬空，电平由外部决定。外部没接东西时读数随机乱跳。</div></div>
+        <div class="mode-cell"><div class="m-name">输入 · 上拉 <code>GPIO_Mode_IPU</code></div><div class="m-desc">内部接上拉电阻到 VDD，默认读 1。按键接 GND 用这个。</div></div>
+        <div class="mode-cell"><div class="m-name">输入 · 下拉 <code>GPIO_Mode_IPD</code></div><div class="m-desc">内部接下拉电阻到 GND，默认读 0。按键接 3.3V 用这个。</div></div>
+        <div class="mode-cell"><div class="m-name">输入 · 模拟 <code>GPIO_Mode_AIN</code></div><div class="m-desc">引脚接模拟电路（ADC 采样用），不读数字电平。</div></div>
+        <div class="mode-cell"><div class="m-name">输出 · 推挽 <code>GPIO_Mode_Out_PP</code></div><div class="m-desc">一上一下两个开关，强推强拉。LED/蜂鸣器首选。</div></div>
+        <div class="mode-cell"><div class="m-name">输出 · 开漏 <code>GPIO_Mode_Out_OD</code></div><div class="m-desc">只有下开关，拉高靠外部上拉。I2C 总线用。</div></div>
+        <div class="mode-cell"><div class="m-name">复用 · 推挽 <code>GPIO_Mode_AF_PP</code></div><div class="m-desc">引脚交给片上外设（TIM/USART/SPI）输出。PWM 用这个！</div></div>
+        <div class="mode-cell"><div class="m-name">复用 · 开漏 <code>GPIO_Mode_AF_OD</code></div><div class="m-desc">片上外设输出 + 开漏。硬件 I2C 引脚用。</div></div>
+      </div>
+      <div class="note key"><span class="t">实战记忆（只记 4 个够用）</span><b>LED/蜂鸣器 → 推挽输出</b>；<b>按键 → 上拉/下拉输入</b>；<b>PWM/串口 → 复用推挽</b>；<b>ADC → 模拟输入</b>。<br>复用 = 引脚控制权交给内部外设（GPIO 自己不再读写）。</div>
+    </div>
+  </div>
+
+  <!-- ========== 5. 代码 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">5</div>库函数三板斧（对照你的 1002 工程）</div>
+    <div class="card-body">
+      <pre><code>// ① 开时钟：GPIOA 在 APB2 总线上
+RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+
+// ② 配结构体：引脚 / 模式 / 速度（三要素）
+GPIO_InitTypeDef GPIO_InitStructure;
+GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_4;
+GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;   // 推挽输出
+GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;   // 翻转速度
+GPIO_Init(GPIOA, &amp;GPIO_InitStructure);
+
+// ③ 读写
+GPIO_SetBits(GPIOA, GPIO_Pin_4);      // 输出 1
+GPIO_ResetBits(GPIOA, GPIO_Pin_4);    // 输出 0
+GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1);  // 读按键</code></pre>
+
+      <h4>LED 闪烁 = 翻转 + 延时；流水灯 = 移位</h4>
+      <pre><code>while (1) {
+    GPIO_ResetBits(GPIOA, GPIO_Pin_4);   // 亮
+    Delay_ms(500);
+    GPIO_SetBits(GPIOA, GPIO_Pin_4);     // 灭
+    Delay_ms(500);
+}</code></pre>
+
+      <h4>按键扫描 = 消抖 + 松手检测</h4>
+      <pre><code>uint8_t Key_GetNum(void) {
+    uint8_t KeyNum = 0;
+    if (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == 0) {  // 按下
+        Delay_ms(20);                                      // 消抖
+        while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == 0); // 等松手
+        Delay_ms(20);
+        KeyNum = 1;
+    }
+    return KeyNum;
+}</code></pre>
+      <div class="note ok"><span class="t">本章要点</span>输出三件套（SetBits/ResetBits/WriteBit）+ 读输入（ReadInputDataBit）。消抖 20ms 是经验值（机械按键抖动 5~20ms）。</div>
+    </div>
+  </div>
+
+  <!-- ========== 6. 避坑 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">!</div>实战坑（GPIO 相关）</div>
+    <div class="card-body">
+      <div class="note danger"><span class="t">① PB3/PB4 默认被 JTAG 占用</span>PA15、PB3、PB4 复位后是 JTAG 引脚，不能当普通 GPIO。要用必须关 JTAG（<code>GPIO_Remap_SWJ_JTAGDisable</code>），但保留 SWD 不影响下载。你的 1002 按键就是这么修好的。</div>
+      <div class="note warn"><span class="t">② 开时钟是第一步</span>忘了 <code>RCC_APB2PeriphClockCmd</code> → GPIO 寄存器写不进，引脚完全没反应，编译还不报错——最阴的坑。</div>
+      <div class="note warn"><span class="t">③ 速度参数</span>GPIO_Speed 是"最大翻转速度"（2/10/50MHz），不是必须匹配外设频率。写 50MHz 通常没错，不用纠结。</div>
+    </div>
+  </div>
+
+  <div class="footer">第 3 节 交互式知识点 · 江科大 STM32 入门教程 · 下一步：第 3 节自测</div>
+</div>
+
+<script>
+/* ===== 推挽输出 ===== */
+let ppState = 0;
+function ppSet(v) {
+  ppState = v;
+  const up = document.getElementById('sw-up'), dn = document.getElementById('sw-dn');
+  const upT = document.getElementById('sw-up-t'), dnT = document.getElementById('sw-dn-t');
+  const volt = document.getElementById('pin-volt-pp');
+  const glow = document.getElementById('led-glow-pp');
+  const st = document.getElementById('pp-status');
+  if (v === 1) {
+    up.style.fill = '#a7f3d0'; upT.textContent = '开'; upT.style.fill = '#059669';
+    dn.style.fill = '#fef2f2'; dnT.textContent = '关'; dnT.style.fill = '#64748b';
+    volt.textContent = '= 3.3V（高）';
+    glow.style.opacity = 0;
+    st.innerHTML = '<b class="hi">输出 1</b>：上管闭合 → 引脚被推到 <b class="hi">3.3V</b>。LED 两端都是高电平，无电流 → <b>灯灭</b>';
+  } else {
+    up.style.fill = '#fef2f2'; upT.textContent = '关'; upT.style.fill = '#64748b';
+    dn.style.fill = '#a7f3d0'; dnT.textContent = '开'; dnT.style.fill = '#059669';
+    volt.textContent = '= 0V（低）';
+    glow.style.opacity = 0.9;
+    st.innerHTML = '<b class="lo">输出 0</b>：下管闭合 → 引脚被拉到 <b class="lo">GND</b>。电流 VCC→LED→引脚→GND → <b>灯亮</b>';
+  }
+}
+ppSet(0);
+
+/* ===== 开漏输出 ===== */
+let odState = 0;
+function odSet(v) {
+  odState = v;
+  const sw = document.getElementById('sw-od'), swT = document.getElementById('sw-od-t');
+  const volt = document.getElementById('pin-volt-od');
+  const st = document.getElementById('od-status');
+  if (v === 1) {
+    sw.style.fill = '#fef2f2'; swT.textContent = '关'; swT.style.fill = '#64748b';
+    volt.textContent = '≈ 3.3V（靠外部上拉）';
+    st.innerHTML = '<b class="hi">输出 1</b>：下管断开 → 引脚悬空 → <b>被外部上拉电阻拉到 3.3V</b>（弱驱动）';
+  } else {
+    sw.style.fill = '#a7f3d0'; swT.textContent = '开'; swT.style.fill = '#059669';
+    volt.textContent = '= 0V';
+    st.innerHTML = '<b class="lo">输出 0</b>：下管闭合 → 引脚被拉到 <b class="lo">GND</b>（和推挽一样）';
+  }
+}
+odSet(1);
+
+/* ===== 输入模式 ===== */
+let inModeState = 'pu';  // pu / pd / fl
+let keyPressed = false;
+function inMode(m) {
+  inModeState = m;
+  const pu = document.getElementById('sw-pu'), pd = document.getElementById('sw-pd');
+  const puT = document.getElementById('sw-pu-t'), pdT = document.getElementById('sw-pd-t');
+  document.getElementById('btn-pu').classList.remove('act');
+  document.getElementById('btn-pd').classList.remove('act');
+  document.getElementById('btn-fl').classList.remove('act');
+  if (m === 'pu') { pu.style.fill='#a7f3d0'; puT.textContent='开'; puT.style.fill='#059669'; document.getElementById('btn-pu').classList.add('act'); }
+  else { pu.style.fill='#eef2f7'; puT.textContent='关'; puT.style.fill='#64748b'; }
+  if (m === 'pd') { pd.style.fill='#a7f3d0'; pdT.textContent='开'; pdT.style.fill='#059669'; document.getElementById('btn-pd').classList.add('act'); }
+  else { pd.style.fill='#eef2f7'; pdT.textContent='关'; pdT.style.fill='#64748b'; }
+  if (m === 'fl') document.getElementById('btn-fl').classList.add('act');
+  renderIn();
+}
+function keyPress() { keyPressed = !keyPressed; renderIn(); }
+function renderIn() {
+  const lev = document.getElementById('in-lev-txt');
+  const st = document.getElementById('in-status');
+  let val;
+  if (inModeState === 'pu') val = keyPressed ? 0 : 1;
+  else if (inModeState === 'pd') val = keyPressed ? 1 : 0;
+  else val = keyPressed ? 1 : '随机';
+  lev.textContent = '电平: ' + val;
+  if (inModeState === 'pu') {
+    st.innerHTML = keyPressed
+      ? 'KEY 按下（接地）→ 引脚被拉低 → 读到 <b class="lo">0</b> → <code>==0</code> 触发'
+      : '上拉输入：不按默认读到 <b class="hi">1</b>。按下 KEY（接 GND）读到 0。';
+  } else if (inModeState === 'pd') {
+    st.innerHTML = keyPressed
+      ? 'KEY 按下（接 3.3V）→ 引脚被拉高 → 读到 <b class="hi">1</b> → <code>==1</code> 触发'
+      : '下拉输入：不按默认读到 <b class="lo">0</b>。按下 KEY（接 3.3V）读到 1。';
+  } else {
+    st.innerHTML = keyPressed
+      ? '浮空输入 + 按下 → 读到 1'
+      : '浮空输入：内部没接任何东西，不按时电平<b>不确定</b>（悬空乱跳）——所以外部电路没接时别用浮空。';
+  }
+}
+inMode('pu');
+</script>
+</body>
+</html>

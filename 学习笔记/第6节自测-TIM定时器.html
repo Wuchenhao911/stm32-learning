@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>第6节 · TIM 定时器 自测卷</title>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\(', '\)']],
+    displayMath: [['$$', '$$'], ['\[', '\]']]
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<style>
+/* === ExamPass Shared Styles === */
+/* Paper-like warm background, clean typography, responsive */
+
+:root {
+  --paper: #fdf6e3;
+  --paper-dark: #f5ecd7;
+  --ink: #2c2c2c;
+  --ink-light: #555;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --divider: #d6c8a8;
+  --card-bg: #fef9ef;
+  --card-border: #e8dcc8;
+  --correct: #22c55e;
+  --correct-bg: #f0fdf4;
+  --wrong: #ef4444;
+  --wrong-bg: #fef2f2;
+  --tag-bg: #fef3c7;
+  --tag-text: #92400e;
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: "Microsoft YaHei", "Noto Sans SC", "SimSun", sans-serif;
+  font-size: 12pt; line-height: 1.75; color: var(--ink);
+  max-width: 860px; margin: auto; padding: 24px 20px 60px;
+  background: var(--paper);
+}
+
+@media print {
+  body { font-size: 10.5pt; background: #fff; }
+  .no-print { display: none !important; }
+  h1, h2, h3 { page-break-after: avoid; }
+}
+
+/* ── Header ── */
+#exampass-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 6px 0; margin-bottom: 0;
+}
+.header-brand { font-size: 1.2em; font-weight: 700; color: #1a1a2e; letter-spacing: 0.3px; }
+.header-url  { font-size: 0.78em; color: #999; }
+.header-divider { border: none; border-top: 2px solid var(--divider); margin: 4px 0 20px 0; }
+
+/* ── Typography ── */
+h1 { font-size: 1.55em; text-align: center; border-bottom: 2px solid var(--divider); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 1.25em; border-bottom: 1px solid var(--divider); padding-bottom: 4px; margin-top: 28px; }
+h3 { font-size: 1.08em; margin-top: 20px; color: var(--ink); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Tables ── */
+table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.95em; }
+td, th { border: 1px solid var(--card-border); padding: 5px 9px; text-align: left; }
+th { background: var(--paper-dark); font-weight: 700; }
+
+/* ── Knowledge point vs explanation ── */
+.kp { font-weight: 700; color: var(--ink); }           /* key point: bold dark */
+.exp { font-weight: 400; color: var(--ink-light); }    /* explanation: lighter */
+.exp em, .exp strong { color: var(--ink); }             /* emphasis inside explanation */
+
+/* ── Block elements ── */
+blockquote {
+  border-left: 3px solid #c0392b; background: #fef9ef;
+  padding: 6px 14px; margin: 10px 0; font-size: 0.95em;
+}
+code { background: #f0ede0; padding: 2px 5px; border-radius: 3px; font-size: 0.92em; }
+pre { background: #f0ede0; padding: 10px; border-radius: var(--radius); overflow-x: auto; }
+
+/* ── TOC ── */
+div.toc {
+  background: var(--card-bg); padding: 14px 18px;
+  border: 1px solid var(--card-border); border-radius: var(--radius); margin-bottom: 22px;
+}
+div.toc ul { padding-left: 18px; }
+div.toc li { margin: 3px 0; font-size: 0.95em; }
+
+/* ── Priority tags ── */
+.tag-must   { background: #fee2e2; color: #991b1b; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-key    { background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-freq   { background: #dbeafe; color: #1e40af; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-info   { background: #f0fdf4; color: #166534; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+
+/* === Interactive Test Styles === */
+
+/* ── Score box ── */
+#score-box {
+  display: none; background: var(--paper-dark); color: var(--ink);
+  padding: 16px 20px; border-radius: var(--radius); margin: 14px 0;
+  text-align: center; border: 1px solid var(--card-border);
+}
+#score-box .score-num { font-size: 2.2em; font-weight: 700; }
+#score-box .score-label { font-size: 0.85em; color: var(--ink-light); }
+
+/* ── Question card ── */
+.q-card {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: var(--radius); padding: 12px 14px; margin: 10px 0;
+  transition: all 0.15s;
+}
+.q-card.correct { border-left: 3px solid var(--correct); background: #f7fdf4; }
+.q-card.wrong   { border-left: 3px solid var(--wrong); background: #fef9f9; }
+
+.q-num  { font-weight: 700; font-size: 0.98em; margin-bottom: 4px; }
+.q-text { margin-bottom: 8px; font-size: 0.98em; }
+
+/* ── Options (compact) ── */
+.option {
+  display: block; padding: 4px 10px; margin: 3px 0;
+  border: 1px solid var(--card-border); border-radius: 4px;
+  cursor: pointer; transition: all 0.12s; font-size: 0.93em;
+  background: #fefcf5;
+}
+.option:hover            { background: #f0ede0; }
+.option input            { margin-right: 6px; }
+.option.selected         { border-color: var(--accent); background: #eff6ff; }
+.option.correct-answer   { border-color: var(--correct); background: var(--correct-bg); }
+.option.wrong-answer     { border-color: var(--wrong); background: var(--wrong-bg); }
+
+/* ── Textareas (compact) ── */
+.q-textarea {
+  width: 100%; min-height: 56px; border: 1px solid var(--card-border);
+  border-radius: 4px; padding: 6px 10px; font-family: inherit;
+  font-size: 0.93em; background: #fefcf5; resize: vertical;
+}
+.q-textarea:focus { outline: none; border-color: var(--accent); }
+.q-code {
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 0.88em; line-height: 1.5; background: #1e1e2e; color: #e0e0e0;
+  tab-size: 4; white-space: pre;
+}
+.q-code:focus { border-color: var(--accent); }
+
+/* ── Partial-credit badge ── */
+.badge-partial { background: #fef3c7; color: #92400e; }
+.q-card.partial { border-color: #f59e0b; }
+
+/* ── Result after grading ── */
+.result {
+  display: none; margin-top: 8px; padding: 8px 12px;
+  background: #fefcf5; border: 1px solid var(--card-border);
+  border-radius: 4px; font-size: 0.9em; line-height: 1.6;
+}
+.result .badge {
+  display: inline-block; padding: 1px 9px; border-radius: 3px;
+  font-weight: 700; font-size: 0.82em; margin-right: 6px;
+}
+.badge-ok  { background: var(--correct-bg); color: #166534; }
+.badge-no  { background: var(--wrong-bg); color: #991b1b; }
+.badge-ref { background: #dbeafe; color: #1e40af; }
+
+.result .explanation { margin-top: 4px; color: var(--ink); }
+.result .pitfall { color: #b45309; margin-top: 3px; font-size: 0.9em; }
+
+/* ── Grading button ── */
+.grading-bar { text-align: center; margin: 20px 0; }
+.grading-bar button {
+  font-size: 1em; padding: 8px 32px; background: var(--accent);
+  color: #fff; border: none; border-radius: var(--radius);
+  cursor: pointer; font-weight: 600; letter-spacing: 0.3px;
+}
+.grading-bar button:hover     { background: var(--accent-hover); }
+.grading-bar button:disabled  { background: #bbb; cursor: not-allowed; }
+
+</style>
+</head>
+<body>
+
+<header id="exampass-header">
+  <div class="header-left"><span class="header-brand">ExamPass Assistant</span></div>
+  <div class="header-right"><span class="header-url">github.com/WUBING2023/ExamPass-Assistant</span></div>
+</header>
+<hr class="header-divider">
+
+<h1>第6节 · TIM 定时器 自测卷</h1>
+<h2 style="text-align:center">章节测试</h2>
+<p style="text-align:center;color:var(--ink-light);font-size:0.95em">exampass 交互式自测 ｜ 含「代码 ↔ 结构图」联动题 ｜ 定时中断 · PWM · 输入捕获 · 编码器接口</p>
+
+<div id="score-box"><div class="score-num" id="score-num">0</div><div class="score-label">总分</div></div>
+<div id="questions-container"></div>
+<div class="grading-bar no-print"><button onclick="gradeAll()" id="grade-btn">提交批改</button></div>
+
+<script>
+var Q = [{"type": "choice", "points": 5, "question": "时基单元结构图（PPT 57 页）中，信号流向的正确顺序是？", "options": ["时钟源→选择器→PSC→CNT→ARR→更新事件→NVIC", "时钟源→NVIC→PSC→CNT→ARR→更新事件", "ARR→CNT→PSC→选择器→时钟源→NVIC", "PSC→选择器→时钟源→ARR→CNT→更新事件"], "answer": 0, "explanation": "从左到右：<b>时钟源 → 选择器 → PSC 预分频 → CNT 计数 →(与 ARR 比较)→ 溢出 → 更新事件(UEV) → 中断输出控制 → NVIC</b>。CEN 运行控制在底部使能整个 CNT。", "pitfall": "易错：把 NVIC 画在时钟源前面，或把 PSC 与 CNT 顺序搞反。"}, {"type": "choice", "points": 5, "question": "结构图中 CK_CNT（送给计数器的时钟）来自哪个模块的输出？", "options": ["ARR 自动重装器输出", "NVIC 输出", "GPIO 输出", "PSC 预分频器输出"], "answer": 3, "explanation": "CK_PSC 是分频器<b>输入</b>（72MHz），CK_CNT 是分频器<b>输出</b>（CK_CNT = CK_PSC/(PSC+1)），每个 CK_CNT 脉冲 CNT 加 1。", "pitfall": "易错：把 CK_CNT 误认成来自 ARR 或 RCC。RCC 提供的是 72MHz 的 CK_INT，中间还隔着 PSC。"}, {"type": "choice", "points": 5, "question": "代码 TIM_Prescaler 写 71 时，CK_CNT 是多少？（72MHz 内部时钟）", "options": ["72MHz", "1kHz", "1MHz", "10MHz"], "answer": 2, "explanation": "CK_CNT = 72MHz / (PSC+1) = 72M / 72 = <b>1MHz</b>（1µs 计一次数，最常用套路）。", "pitfall": "易错：忘 +1，算出 72M/71≈1.014MHz 之类。PSC 写 71 = 72 分频。"}, {"type": "choice", "points": 5, "question": "定时器溢出周期（两次更新中断间隔）公式正确的是？", "options": ["T = (ARR+1)×(PSC+1) / 72MHz", "T = ARR×PSC×72MHz", "T = 72MHz / (ARR+PSC)", "T = (ARR-1)×(PSC-1) / 72MHz"], "answer": 0, "explanation": "T_OV = (PSC+1)(ARR+1)/72MHz。例：PSC=7199、ARR=9999 → 7200×10000/72M = <b>1 秒</b>。", "pitfall": "易错：写成乘法在分子、或者 ARR/PSC 忘了 +1。"}, {"type": "choice", "points": 5, "question": "代码 TimeBaseInitStructure.TIM_Prescaler = 7200 - 1 配置的是结构图中哪个模块？", "options": ["CNT 计数器", "PSC 预分频器", "ARR 自动重装器", "NVIC"], "answer": 1, "explanation": "TIM_Prescaler 填的就是 <b>PSC 预分频器</b> 的寄存器值（写 7199 = 7200 分频）。-1 是「分频系数 → 寄存器值」的固定翻译。", "pitfall": "易错：把 TIM_Prescaler 和 TIM_Period 记反 —— Prescaler 是 PSC（分频），Period 是 ARR（重装）。"}, {"type": "choice", "points": 5, "question": "代码 TIM_Cmd(TIM2, ENABLE) 直接操作的是结构图中的哪个模块？", "options": ["中断输出控制", "NVIC", "运行控制（CEN 位）", "时钟源选择器"], "answer": 2, "explanation": "TIM_Cmd 本质是置位 <b>CR1.CEN</b>（运行控制）。CEN=0 时 CNT 停摆，所以它是初始化<b>最后一步</b>。", "pitfall": "易错：以为 TIM_Cmd 是开中断。开中断的是 TIM_ITConfig + NVIC_Init。"}, {"type": "choice", "points": 5, "question": "代码 TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE) 对应结构图中的哪个模块？", "options": ["PSC", "CNT", "GPIO", "中断输出控制（UIE）"], "answer": 3, "explanation": "TIM_ITConfig 设置 <b>DIER.UIE=1</b>，即「中断输出控制」这道闸门，决定 UEV 能否送去 NVIC。", "pitfall": "易错：把 TIM_ITConfig 当成 NVIC。它是定时器内部的使能位，NVIC 是另一个芯片级模块。"}, {"type": "choice", "points": 5, "question": "下面初始化代码「配置全对」但定时器完全不跑，最可能缺了哪一句？", "options": ["缺 NVIC_Init", "缺 TIM_Cmd(TIM2, ENABLE)", "缺 TIM_TimeBaseInit", "缺 GPIO_Init"], "answer": 1, "explanation": "RCC→InternalClock→TimeBaseInit→ClearFlag→ITConfig→NVIC 都齐了，唯独漏 <b>TIM_Cmd(TIM2, ENABLE)</b>（CEN=1）。CEN=0 → CNT 停摆 → 无 UEV → 中断永远不来。", "pitfall": "易错：漏 TIM_Cmd 编译不报错、程序不崩溃，只是没现象，最容易排查不出来。"}, {"type": "multi", "points": 6, "question": "更新事件 UEV 要到达 CPU 的 TIM2_IRQHandler，必须满足哪些条件？（多选）", "options": ["UIE=1（TIM_ITConfig 使能更新中断）", "PSC 分频正确", "NVIC 中 TIM2_IRQn 通道已使能", "ARR 值必须大于 1000"], "answer": [0, 2], "explanation": "三道闸门：<b>① UIE=1（定时器内）② NVIC 通道使能 ③ 全局中断开关</b>（Cortex-M3 默认开）。PSC/ARR 只决定溢出周期，不影响能否进中断。", "pitfall": "易错：多选时把 PSC/ARR 也算进「能进中断」的条件。"}, {"type": "tf", "points": 3, "question": "PSC 寄存器写 N 表示 N+1 分频。例如写 71 就是 72 分频。", "options": [], "answer": 0, "explanation": "正确。这就是为什么代码里总是写 X-1：把「分频系数」翻译成「寄存器值」。"}, {"type": "tf", "points": 3, "question": "ARR 带影子寄存器，程序修改 ARR 后立刻生效、当前周期立刻变。", "options": [], "answer": 1, "explanation": "错误。有预装（影子）时，改 ARR 先进预装载寄存器，<b>等下一次 UEV 才同步生效</b>，避免周期中途错乱。"}, {"type": "tf", "points": 3, "question": "TIM2/3/4 挂在 APB2 总线上，应使用 RCC_APB2PeriphClockCmd 开时钟。", "options": [], "answer": 1, "explanation": "错误。TIM2~4 挂在 <b>APB1</b>，用 RCC_APB1PeriphClockCmd；只有 TIM1/8（高级定时器）在 APB2。", "pitfall": "高频坑：写错总线 = 寄存器写不进 = 定时器不工作。"}, {"type": "tf", "points": 3, "question": "TIM_Cmd(TIM2, ENABLE) 的本质是置位 CR1 寄存器的 CEN（Counter Enable）位。", "options": [], "answer": 0, "explanation": "正确。CEN=1 才启动计数，对应结构图底部「运行控制」模块。"}, {"type": "fill", "points": 3, "question": "定时器溢出时间公式 T=(ARR+1)×(PSC+1)/____ MHz，分母是系统时钟频率。", "options": [], "answer": ["72"], "explanation": "F103 系统时钟 72MHz。"}, {"type": "fill", "points": 3, "question": "TIM2/3/4 通用定时器挂在 ____ 总线上（填 APB1 或 APB2）。", "options": [], "answer": ["APB1"], "explanation": "通用定时器 TIM2~5 挂 APB1；TIM1/8 高级定时器挂 APB2。"}, {"type": "fill", "points": 3, "question": "控制计数器 CNT 是否计数的位是 ____（3 个大写字母），TIM_Cmd 就在操作它。", "options": [], "answer": ["CEN"], "explanation": "CR1.CEN = Counter Enable。"}, {"type": "fill", "points": 3, "question": "PWM 占空比 = CCR / ARR，运行时连续改变 ____ 寄存器就能平滑调节亮度/角度。", "options": [], "answer": ["CCR"], "explanation": "改 CCR 即改占空比；频率由时基（PSC+ARR）决定，两者互不干扰。"}, {"type": "code", "points": 6, "question": "补全 Timer_Init：下面代码中有三处 ____ 被挖空，请写出缺的内容（按顺序：ARR 重装值、更新中断使能、启动定时器）。<br><br><pre><code>void Timer_Init(void)\n{\n    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);\n    TIM_InternalClockConfig(TIM2);\n    TIM_TimeBaseInitTypeDef s;\n    s.TIM_Period = ____;          // ARR：10000-1 → 1MHz 计数时 10ms\n    s.TIM_Prescaler = 71;         // PSC：72 分频 → 1MHz\n    TIM_TimeBaseInit(TIM2, &amp;s);\n    TIM_ClearFlag(TIM2, TIM_FLAG_Update);\n    ____ (TIM2, TIM_IT_Update, ENABLE);   // 开更新中断\n    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);\n    // ... NVIC_Init(TIM2_IRQn) ...\n    ____ (TIM2, ENABLE);          // 启动定时器！\n}</code></pre>", "options": [], "answer": -1, "explanation": "<strong>参考答案</strong>：三处依次为 <b>10000-1</b>、<b>TIM_ITConfig</b>、<b>TIM_Cmd</b>。<br><br><strong>完整对照结构图</strong>：TIM_Period→ARR、TIM_Prescaler→PSC、TIM_ITConfig→中断输出控制(UIE)、NVIC_Init→NVIC、TIM_Cmd→运行控制(CEN)。<br><br><strong>评分要点</strong>：ARR 填 10000-1 得 2 分；TIM_ITConfig 得 2 分；TIM_Cmd 得 2 分。", "pitfall": "易错：TIM_ITConfig 和 TIM_Cmd 顺序写反（先开中断后启动没问题，但漏了 TIM_Cmd 一定不跑）。"}, {"type": "code", "points": 6, "question": "补全编码器读取函数：下面 Encoder_Get 想返回「本次转动量（带符号）」并清零计数，请补全两处。<br><br><pre><code>int16_t Encoder_Get(void)\n{\n    int16_t Temp = ____(TIM3);   // 读当前计数值\n    ____(TIM3, 0);               // 读后清零\n    return Temp;\n}</code></pre>", "options": [], "answer": -1, "explanation": "<strong>参考答案</strong>：<b>TIM_GetCounter</b>、<b>TIM_SetCounter</b>。<br><br>编码器接口模式（TIM_EncoderMode_TI12）下 CNT 就是位置计数器：正转 +1、反转 -1。读后清零可得到「上一次读取以来的转动量」，配合 OLED 显示方向与速度。", "pitfall": "易错：忘清零，显示的是累计位置而非本次转动量。"}, {"type": "comprehensive", "points": 12, "question": "把 Timer_Init 的 6 个步骤打乱如下，写出正确的执行顺序（用编号，如 3-1-2-4-5-6），并说明每步对应 57 页结构图的哪个模块。<br><br>① TIM_Cmd(TIM2, ENABLE)<br>② TIM_TimeBaseInit 配 PSC/ARR<br>③ RCC_APB1PeriphClockCmd 开 TIM2 时钟<br>④ TIM_ITConfig 使能更新中断<br>⑤ NVIC_Init 使能 TIM2_IRQn<br>⑥ TIM_InternalClockConfig 选内部时钟", "options": [], "answer": -1, "explanation": "<strong>答案：③-⑥-②-④-⑤-①</strong>，正好沿结构图从左到右走一遍：<br>③ 给 TIM2 供电（RCC，在结构图左侧外面）<br>⑥ 选时钟源（RCC 内部 → 梯形选择器）<br>② 写 PSC + ARR（时基单元）<br>④ 开 UIE（中断输出控制闸门）<br>⑤ NVIC 通道使能（最右侧 NVIC）<br>① TIM_Cmd 开 CEN（底部运行控制，最后一步）<br><br><strong>评分要点</strong>：顺序全对 8 分；每点出一步对应模块 0.5 分，最多 4 分。", "pitfall": "易错：把 TIM_Cmd 放前面（开了不配也没用）；或把 NVIC 放在 TIM_ITConfig 前面（闸门顺序无关紧要，但逻辑上先开定时器内使能）。"}, {"type": "essay", "points": 6, "question": "结合 57 页结构图解释：为什么「所有初始化配置都对、只忘了写 TIM_Cmd」，定时器就完全不工作？", "options": [], "answer": -1, "explanation": "<strong>参考答案</strong>：TIM_Cmd 操作的是结构图底部的<b>运行控制（CEN 位）</b>。CEN=0 时计数器 CNT 被禁止，<b>不会对 CK_CNT 计数</b>，因此 CNT 永远不会数到 ARR、不会溢出、<b>不会产生更新事件 UEV</b>，中断输出控制自然收不到信号，NVIC 永远等不到中断 —— 整个时基单元从源头停摆。<br><br><strong>评分要点</strong>：说出 CEN 控制 CNT（3 分）；说出无计数→无溢出→无 UEV→无中断 的因果链（3 分）。", "pitfall": "易错：只说「忘了开定时器」，没从结构图链路讲清楚因果。"}];
+var LABELS = {"page_title": "章节测试", "section": {"choice": "一、选择题", "multi": "二、多选题", "tf": "三、判断题", "fill": "四、填空题", "short": "五、简答题", "calc": "六、计算题", "code": "七、代码题", "essay": "八、问答题", "comprehensive": "九、综合题"}, "section_order": ["choice", "multi", "tf", "fill", "short", "calc", "code", "essay", "comprehensive"], "points_suffix": "分", "true_label": "正确", "false_label": "错误", "placeholder": "在此作答...", "code_placeholder": "在此编写代码...", "pitfall_prefix": "易错提醒：", "correct_label": "正确", "wrong_label": "错误", "partial_label": "部分正确", "answer_prefix": "正确答案：", "reference_label": "参考答案", "graded_label": "已批改", "grade_button": "提交批改", "score_label": "总分", "duration_prefix": "满分 100 分 | 建议 ", "duration_suffix": " 分钟 | 选择答案后点击提交批改"};
+
+// ─── Answer normalization (robust to how the JSON was authored) ──────
+// tf / choice answers may arrive as int index, boolean, letter ("A"),
+// or label string ("正确"/"错误"/"对"/"错"). All are coerced to an
+// option index so grading never silently fails on a type mismatch.
+
+function tfAnswerIndex(ans) {
+  // option 0 = true_label (正确), option 1 = false_label (错误)
+  if (typeof ans === 'boolean') return ans ? 0 : 1;
+  if (typeof ans === 'number') return ans === 0 ? 0 : 1;
+  var s = ('' + ans).trim().toLowerCase();
+  var truthy = ['0', 't', 'true', '正确', '对', '是', 'yes', 'y', '√', '✓'];
+  var falsy  = ['1', 'f', 'false', '错误', '错', '否', 'no', 'n', '×', 'x'];
+  if (truthy.indexOf(s) !== -1) return 0;
+  if (falsy.indexOf(s) !== -1) return 1;
+  return ans ? 0 : 1;
+}
+
+function choiceAnswerIndex(ans, options) {
+  if (typeof ans === 'number') return ans;
+  var s = ('' + ans).trim();
+  if (/^[A-Za-z]$/.test(s)) return s.toUpperCase().charCodeAt(0) - 65;
+  if (/^\d+$/.test(s)) return parseInt(s, 10);
+  if (options) {
+    for (var i = 0; i < options.length; i++) {
+      if (('' + options[i]).trim() === s) return i;
+    }
+  }
+  return parseInt(s, 10);
+}
+
+function multiAnswerSet(ans, options) {
+  var arr = Array.isArray(ans) ? ans : [ans];
+  var set = {};
+  for (var i = 0; i < arr.length; i++) {
+    set[choiceAnswerIndex(arr[i], options)] = true;
+  }
+  return set;
+}
+
+// Normalize free text for fill-in-the-blank comparison: trim, lowercase,
+// drop surrounding whitespace and common punctuation, unify full/half width.
+function normText(s) {
+  s = ('' + s).trim().toLowerCase();
+  s = s.replace(/[\s　]+/g, '');
+  s = s.replace(/[.,;:!?。，、；：！？“”"'（）()【】\[\]<>《》]/g, '');
+  // full-width ASCII -> half-width
+  s = s.replace(/[！-～]/g, function (c) {
+    return String.fromCharCode(c.charCodeAt(0) - 0xfee0);
+  });
+  return s;
+}
+
+// How many blanks does a fill question have? Count underscore / ＿ runs.
+function fillBlankCount(question) {
+  var m = ('' + question).match(/(_{2,}|＿+)/g);
+  return m ? m.length : 0;
+}
+
+// Coerce a fill `answer` into an array (one entry per blank) of accepted
+// answer lists. Handles: string, [synonyms], [[blank1 syns],[blank2 syns]].
+function fillBlankAnswers(ans, nBlanks) {
+  if (nBlanks < 1) nBlanks = 1;
+  if (!Array.isArray(ans)) return padBlanks([[ans]], nBlanks);
+  if (ans.length && Array.isArray(ans[0])) return padBlanks(ans, nBlanks);
+  // flat array of strings
+  if (nBlanks === 1) return [ans];                 // synonyms for one blank
+  if (ans.length === nBlanks) {                    // one answer per blank
+    return ans.map(function (a) { return [a]; });
+  }
+  return padBlanks([ans], nBlanks);                // ambiguous -> all on blank 1
+}
+
+function padBlanks(arr, n) {
+  var out = arr.slice(0, n);
+  while (out.length < n) out.push(['']);
+  return out;
+}
+
+// ─── Build ───────────────────────────────────────────────────────────
+
+function build() {
+  var container = document.getElementById('questions-container');
+  if (!container) { console.error('ExamPass: questions-container not found'); return; }
+
+  // Stable-sort questions by section order so headings group correctly
+  // regardless of input order.
+  var order = LABELS.section_order || [];
+  Q.forEach(function (q, i) { q._i = i; });
+  Q.sort(function (a, b) {
+    var oa = order.indexOf(a.type); if (oa === -1) oa = 99;
+    var ob = order.indexOf(b.type); if (ob === -1) ob = 99;
+    return oa - ob || a._i - b._i;
+  });
+
+  var h = '';
+  var sec = '';
+  var titles = LABELS.section;
+
+  for (var i = 0; i < Q.length; i++) {
+    var q = Q[i];
+    if (q.type !== sec) {
+      sec = q.type;
+      if (titles[q.type]) h += '<h3>' + titles[q.type] + '</h3>';
+    }
+
+    var qid = 'q' + i;
+    h += '<div class="q-card" id="card-' + qid + '">';
+    h += '<div class="q-num">' + (i + 1) + '. (' + q.points + ' ' + LABELS.points_suffix + ')</div>';
+
+    if (q.type === 'fill') {
+      h += '<div class="q-text">' + renderFill(q, qid) + '</div>';
+    } else {
+      h += '<div class="q-text">' + q.question + '</div>';
+    }
+
+    if (q.type === 'choice') {
+      var opts = q.options || [];
+      for (var j = 0; j < opts.length; j++) {
+        h += '<label class="option" id="opt-' + qid + '-' + j + '" onclick="sel(\'' + qid + '\',' + j + ')">';
+        h += '<input type="radio" name="' + qid + '" value="' + j + '">' + String.fromCharCode(65 + j) + '. ' + opts[j] + '</label>';
+      }
+    } else if (q.type === 'multi') {
+      var mopts = q.options || [];
+      for (var k = 0; k < mopts.length; k++) {
+        h += '<label class="option" id="opt-' + qid + '-' + k + '" onclick="toggle(\'' + qid + '\',' + k + ')">';
+        h += '<input type="checkbox" name="' + qid + '" value="' + k + '">' + String.fromCharCode(65 + k) + '. ' + mopts[k] + '</label>';
+      }
+    } else if (q.type === 'tf') {
+      h += '<label class="option" id="opt-' + qid + '-0" onclick="sel(\'' + qid + '\',0)">';
+      h += '<input type="radio" name="' + qid + '" value="0">' + LABELS.true_label + '</label>';
+      h += '<label class="option" id="opt-' + qid + '-1" onclick="sel(\'' + qid + '\',1)">';
+      h += '<input type="radio" name="' + qid + '" value="1">' + LABELS.false_label + '</label>';
+    } else if (q.type === 'fill') {
+      // inputs already rendered inline inside q-text
+    } else if (q.type === 'code') {
+      h += '<textarea class="q-textarea q-code" id="text-' + qid + '" placeholder="' + (LABELS.code_placeholder || LABELS.placeholder) + '" rows="8" spellcheck="false"></textarea>';
+    } else {
+      h += '<textarea class="q-textarea" id="text-' + qid + '" placeholder="' + LABELS.placeholder + '" rows="3"></textarea>';
+    }
+
+    h += '<div class="result" id="result-' + qid + '">';
+    h += '<span class="badge" id="badge-' + qid + '"></span><span id="correct-' + qid + '"></span>';
+    h += '<div class="explanation">' + (q.explanation || '') + '</div>';
+    if (q.pitfall) {
+      h += '<div class="pitfall">' + LABELS.pitfall_prefix + q.pitfall + '</div>';
+    }
+    h += '</div></div>';
+  }
+
+  container.innerHTML = h;
+
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([container]).catch(function (err) {
+      console.error('MathJax typeset error:', err);
+    });
+  }
+}
+
+// Render fill question text with inline <input> boxes replacing blanks.
+function renderFill(q, qid) {
+  var nBlanks = fillBlankCount(q.question);
+  var k = 0;
+  var html = ('' + q.question).replace(/(_{2,}|＿+)/g, function () {
+    var inp = '<input type="text" class="fill-input" id="fill-' + qid + '-' + k + '" autocomplete="off" spellcheck="false">';
+    k++;
+    return inp;
+  });
+  if (k === 0) {
+    // No markers in text -> append boxes based on answer shape
+    var n = fillBlankAnswers(q.answer, 1).length;
+    var ans = q.answer;
+    if (Array.isArray(ans)) n = Array.isArray(ans[0]) ? ans.length : (ans.length || 1);
+    if (n < 1) n = 1;
+    html += '<div class="fill-row">';
+    for (var b = 0; b < n; b++) {
+      if (n > 1) html += '<span class="fill-tag">' + (b + 1) + '.</span>';
+      html += '<input type="text" class="fill-input" id="fill-' + qid + '-' + b + '" autocomplete="off" spellcheck="false">';
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+document.addEventListener('DOMContentLoaded', build);
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+  build();
+}
+
+// ─── Selection handlers ──────────────────────────────────────────────
+
+function sel(qid, idx) {
+  var prefix = 'opt-' + qid + '-';
+  var all = document.querySelectorAll('[id^="' + prefix + '"]');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
+  var target = document.getElementById('opt-' + qid + '-' + idx);
+  if (target) target.classList.add('selected');
+  var radio = document.querySelector('input[name="' + qid + '"][value="' + idx + '"]');
+  if (radio) radio.checked = true;
+}
+
+function toggle(qid, idx) {
+  var box = document.querySelector('input[name="' + qid + '"][value="' + idx + '"]');
+  var label = document.getElementById('opt-' + qid + '-' + idx);
+  if (!box) return;
+  box.checked = !box.checked;
+  if (label) label.classList.toggle('selected', box.checked);
+}
+
+// ─── Grading ─────────────────────────────────────────────────────────
+
+function gradeAll() {
+  var score = 0;
+  for (var i = 0; i < Q.length; i++) {
+    var q = Q[i];
+    var qid = 'q' + i;
+    var card = document.getElementById('card-' + qid);
+    var result = document.getElementById('result-' + qid);
+    var badge = document.getElementById('badge-' + qid);
+    var correctEl = document.getElementById('correct-' + qid);
+    if (!card || !result) continue;
+
+    result.style.display = 'block';
+
+    if (q.type === 'choice' || q.type === 'tf') {
+      score += gradeSingle(q, qid, card, badge, correctEl);
+    } else if (q.type === 'multi') {
+      score += gradeMulti(q, qid, card, badge, correctEl);
+    } else if (q.type === 'fill') {
+      score += gradeFill(q, qid, card, badge, correctEl);
+    } else {
+      card.classList.add('correct');
+      badge.className = 'badge badge-ref';
+      badge.textContent = LABELS.reference_label;
+    }
+  }
+
+  var sb = document.getElementById('score-box');
+  if (sb) {
+    sb.style.display = 'block';
+    document.getElementById('score-num').textContent = roundScore(score);
+    sb.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  var opts = document.querySelectorAll('.option');
+  for (var a = 0; a < opts.length; a++) opts[a].style.pointerEvents = 'none';
+  var tas = document.querySelectorAll('.q-textarea');
+  for (var b = 0; b < tas.length; b++) tas[b].disabled = true;
+  var fis = document.querySelectorAll('.fill-input');
+  for (var c = 0; c < fis.length; c++) fis[c].disabled = true;
+
+  var btn = document.getElementById('grade-btn');
+  if (btn) { btn.disabled = true; btn.textContent = LABELS.graded_label; }
+
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise().catch(function (err) {
+      console.error('MathJax typeset error:', err);
+    });
+  }
+}
+
+function roundScore(s) {
+  return Math.round(s * 10) / 10;
+}
+
+function gradeSingle(q, qid, card, badge, correctEl) {
+  var ansIdx = q.type === 'tf' ? tfAnswerIndex(q.answer) : choiceAnswerIndex(q.answer, q.options);
+  var radio = document.querySelector('input[name="' + qid + '"]:checked');
+  if (radio && parseInt(radio.value, 10) === ansIdx) {
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+    correctEl.innerHTML = '';
+    var ok = document.getElementById('opt-' + qid + '-' + ansIdx);
+    if (ok) ok.classList.add('correct-answer');
+    return q.points;
+  }
+  card.classList.add('wrong');
+  badge.className = 'badge badge-no';
+  badge.textContent = LABELS.wrong_label;
+  var ansText = q.type === 'choice'
+    ? String.fromCharCode(65 + ansIdx) + '. ' + (q.options ? q.options[ansIdx] : '')
+    : (ansIdx === 0 ? LABELS.true_label : LABELS.false_label);
+  correctEl.innerHTML = LABELS.answer_prefix + ansText;
+  if (radio) {
+    var wrongOpt = document.getElementById('opt-' + qid + '-' + radio.value);
+    if (wrongOpt) wrongOpt.classList.add('wrong-answer');
+  }
+  var corr = document.getElementById('opt-' + qid + '-' + ansIdx);
+  if (corr) corr.classList.add('correct-answer');
+  return 0;
+}
+
+function gradeMulti(q, qid, card, badge, correctEl) {
+  var want = multiAnswerSet(q.answer, q.options);
+  var wantKeys = Object.keys(want).map(Number);
+  var checked = document.querySelectorAll('input[name="' + qid + '"]:checked');
+  var picked = [];
+  for (var i = 0; i < checked.length; i++) picked.push(parseInt(checked[i].value, 10));
+
+  var anyWrong = false, hitCorrect = 0;
+  for (var p = 0; p < picked.length; p++) {
+    if (want[picked[p]]) hitCorrect++;
+    else anyWrong = true;
+  }
+
+  // reveal correct / wrong option markers
+  var mopts = q.options || [];
+  for (var j = 0; j < mopts.length; j++) {
+    var el = document.getElementById('opt-' + qid + '-' + j);
+    if (!el) continue;
+    if (want[j]) el.classList.add('correct-answer');
+    else if (picked.indexOf(j) !== -1) el.classList.add('wrong-answer');
+  }
+
+  var earned;
+  if (!anyWrong && hitCorrect === wantKeys.length && picked.length === wantKeys.length) {
+    earned = q.points;
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+    correctEl.innerHTML = '';
+  } else if (!anyWrong && hitCorrect > 0) {
+    // 少选不错选 -> partial credit
+    earned = roundScore(q.points * hitCorrect / wantKeys.length);
+    card.classList.add('partial');
+    badge.className = 'badge badge-partial';
+    badge.textContent = LABELS.partial_label;
+    correctEl.innerHTML = LABELS.answer_prefix + multiAnswerText(wantKeys, mopts);
+  } else {
+    earned = 0;
+    card.classList.add('wrong');
+    badge.className = 'badge badge-no';
+    badge.textContent = LABELS.wrong_label;
+    correctEl.innerHTML = LABELS.answer_prefix + multiAnswerText(wantKeys, mopts);
+  }
+  return earned;
+}
+
+function multiAnswerText(keys, options) {
+  return keys.sort(function (a, b) { return a - b; }).map(function (k) {
+    return String.fromCharCode(65 + k) + '. ' + (options ? options[k] : '');
+  }).join('  ');
+}
+
+function gradeFill(q, qid, card, badge, correctEl) {
+  var nBlanks = fillBlankCount(q.question);
+  var blanks = fillBlankAnswers(q.answer, nBlanks);
+  var n = blanks.length;
+  var hit = 0;
+  var displays = [];
+
+  for (var b = 0; b < n; b++) {
+    var inp = document.getElementById('fill-' + qid + '-' + b);
+    var accepted = blanks[b] || [''];
+    var user = inp ? normText(inp.value) : '';
+    var ok = false;
+    for (var a = 0; a < accepted.length; a++) {
+      if (accepted[a] !== '' && normText(accepted[a]) === user && user !== '') { ok = true; break; }
+    }
+    if (inp) inp.classList.add(ok ? 'fill-ok' : 'fill-no');
+    if (ok) hit++;
+    displays.push((n > 1 ? (b + 1) + '. ' : '') + accepted.filter(function (x) { return x !== ''; }).join(' / '));
+  }
+
+  var earned = roundScore(q.points * hit / n);
+  correctEl.innerHTML = LABELS.answer_prefix + displays.join('   ');
+
+  if (hit === n) {
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+  } else if (hit > 0) {
+    card.classList.add('partial');
+    badge.className = 'badge badge-partial';
+    badge.textContent = LABELS.partial_label;
+  } else {
+    card.classList.add('wrong');
+    badge.className = 'badge badge-no';
+    badge.textContent = LABELS.wrong_label;
+  }
+  return earned;
+}
+
+</script>
+</body>
+</html>

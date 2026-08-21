@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>第 1 节自测 · 认识 STM32</title>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\(', '\)']],
+    displayMath: [['$$', '$$'], ['\[', '\]']]
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<style>
+/* === ExamPass Shared Styles === */
+/* Paper-like warm background, clean typography, responsive */
+
+:root {
+  --paper: #fdf6e3;
+  --paper-dark: #f5ecd7;
+  --ink: #2c2c2c;
+  --ink-light: #555;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --divider: #d6c8a8;
+  --card-bg: #fef9ef;
+  --card-border: #e8dcc8;
+  --correct: #22c55e;
+  --correct-bg: #f0fdf4;
+  --wrong: #ef4444;
+  --wrong-bg: #fef2f2;
+  --tag-bg: #fef3c7;
+  --tag-text: #92400e;
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: "Microsoft YaHei", "Noto Sans SC", "SimSun", sans-serif;
+  font-size: 12pt; line-height: 1.75; color: var(--ink);
+  max-width: 860px; margin: auto; padding: 24px 20px 60px;
+  background: var(--paper);
+}
+
+@media print {
+  body { font-size: 10.5pt; background: #fff; }
+  .no-print { display: none !important; }
+  h1, h2, h3 { page-break-after: avoid; }
+}
+
+/* ── Header ── */
+#exampass-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 6px 0; margin-bottom: 0;
+}
+.header-brand { font-size: 1.2em; font-weight: 700; color: #1a1a2e; letter-spacing: 0.3px; }
+.header-url  { font-size: 0.78em; color: #999; }
+.header-divider { border: none; border-top: 2px solid var(--divider); margin: 4px 0 20px 0; }
+
+/* ── Typography ── */
+h1 { font-size: 1.55em; text-align: center; border-bottom: 2px solid var(--divider); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 1.25em; border-bottom: 1px solid var(--divider); padding-bottom: 4px; margin-top: 28px; }
+h3 { font-size: 1.08em; margin-top: 20px; color: var(--ink); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Tables ── */
+table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.95em; }
+td, th { border: 1px solid var(--card-border); padding: 5px 9px; text-align: left; }
+th { background: var(--paper-dark); font-weight: 700; }
+
+/* ── Knowledge point vs explanation ── */
+.kp { font-weight: 700; color: var(--ink); }           /* key point: bold dark */
+.exp { font-weight: 400; color: var(--ink-light); }    /* explanation: lighter */
+.exp em, .exp strong { color: var(--ink); }             /* emphasis inside explanation */
+
+/* ── Block elements ── */
+blockquote {
+  border-left: 3px solid #c0392b; background: #fef9ef;
+  padding: 6px 14px; margin: 10px 0; font-size: 0.95em;
+}
+code { background: #f0ede0; padding: 2px 5px; border-radius: 3px; font-size: 0.92em; }
+pre { background: #f0ede0; padding: 10px; border-radius: var(--radius); overflow-x: auto; }
+
+/* ── TOC ── */
+div.toc {
+  background: var(--card-bg); padding: 14px 18px;
+  border: 1px solid var(--card-border); border-radius: var(--radius); margin-bottom: 22px;
+}
+div.toc ul { padding-left: 18px; }
+div.toc li { margin: 3px 0; font-size: 0.95em; }
+
+/* ── Priority tags ── */
+.tag-must   { background: #fee2e2; color: #991b1b; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-key    { background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-freq   { background: #dbeafe; color: #1e40af; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-info   { background: #f0fdf4; color: #166534; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+
+/* === Interactive Test Styles === */
+
+/* ── Score box ── */
+#score-box {
+  display: none; background: var(--paper-dark); color: var(--ink);
+  padding: 16px 20px; border-radius: var(--radius); margin: 14px 0;
+  text-align: center; border: 1px solid var(--card-border);
+}
+#score-box .score-num { font-size: 2.2em; font-weight: 700; }
+#score-box .score-label { font-size: 0.85em; color: var(--ink-light); }
+
+/* ── Question card ── */
+.q-card {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: var(--radius); padding: 12px 14px; margin: 10px 0;
+  transition: all 0.15s;
+}
+.q-card.correct { border-left: 3px solid var(--correct); background: #f7fdf4; }
+.q-card.wrong   { border-left: 3px solid var(--wrong); background: #fef9f9; }
+
+.q-num  { font-weight: 700; font-size: 0.98em; margin-bottom: 4px; }
+.q-text { margin-bottom: 8px; font-size: 0.98em; }
+
+/* ── Options (compact) ── */
+.option {
+  display: block; padding: 4px 10px; margin: 3px 0;
+  border: 1px solid var(--card-border); border-radius: 4px;
+  cursor: pointer; transition: all 0.12s; font-size: 0.93em;
+  background: #fefcf5;
+}
+.option:hover            { background: #f0ede0; }
+.option input            { margin-right: 6px; }
+.option.selected         { border-color: var(--accent); background: #eff6ff; }
+.option.correct-answer   { border-color: var(--correct); background: var(--correct-bg); }
+.option.wrong-answer     { border-color: var(--wrong); background: var(--wrong-bg); }
+
+/* ── Textareas (compact) ── */
+.q-textarea {
+  width: 100%; min-height: 56px; border: 1px solid var(--card-border);
+  border-radius: 4px; padding: 6px 10px; font-family: inherit;
+  font-size: 0.93em; background: #fefcf5; resize: vertical;
+}
+.q-textarea:focus { outline: none; border-color: var(--accent); }
+.q-code {
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 0.88em; line-height: 1.5; background: #1e1e2e; color: #e0e0e0;
+  tab-size: 4; white-space: pre;
+}
+.q-code:focus { border-color: var(--accent); }
+
+/* ── Partial-credit badge ── */
+.badge-partial { background: #fef3c7; color: #92400e; }
+.q-card.partial { border-color: #f59e0b; }
+
+/* ── Result after grading ── */
+.result {
+  display: none; margin-top: 8px; padding: 8px 12px;
+  background: #fefcf5; border: 1px solid var(--card-border);
+  border-radius: 4px; font-size: 0.9em; line-height: 1.6;
+}
+.result .badge {
+  display: inline-block; padding: 1px 9px; border-radius: 3px;
+  font-weight: 700; font-size: 0.82em; margin-right: 6px;
+}
+.badge-ok  { background: var(--correct-bg); color: #166534; }
+.badge-no  { background: var(--wrong-bg); color: #991b1b; }
+.badge-ref { background: #dbeafe; color: #1e40af; }
+
+.result .explanation { margin-top: 4px; color: var(--ink); }
+.result .pitfall { color: #b45309; margin-top: 3px; font-size: 0.9em; }
+
+/* ── Grading button ── */
+.grading-bar { text-align: center; margin: 20px 0; }
+.grading-bar button {
+  font-size: 1em; padding: 8px 32px; background: var(--accent);
+  color: #fff; border: none; border-radius: var(--radius);
+  cursor: pointer; font-weight: 600; letter-spacing: 0.3px;
+}
+.grading-bar button:hover     { background: var(--accent-hover); }
+.grading-bar button:disabled  { background: #bbb; cursor: not-allowed; }
+
+</style>
+</head>
+<body>
+
+<header id="exampass-header">
+  <div class="header-left"><span class="header-brand">ExamPass Assistant</span></div>
+  <div class="header-right"><span class="header-url">github.com/WUBING2023/ExamPass-Assistant</span></div>
+</header>
+<hr class="header-divider">
+
+<h1>第 1 节自测 · 认识 STM32</h1>
+<h2 style="text-align:center">章节测试</h2>
+<p style="text-align:center;color:var(--ink-light);font-size:0.95em">江科大 P1-P2 · 12 选择 + 6 判断 + 4 填空 + 2 简答 · 满分 100</p>
+
+<div id="score-box"><div class="score-num" id="score-num">0</div><div class="score-label">总分</div></div>
+<div id="questions-container"></div>
+<div class="grading-bar no-print"><button onclick="gradeAll()" id="grade-btn">提交批改</button></div>
+
+<script>
+var Q = [{"type": "choice", "points": 5, "question": "STM32F103 系列使用的内核和最高主频是？", "options": ["Cortex-M4 内核，72 MHz", "Cortex-M3 内核，72 MHz", "Cortex-M3 内核，168 MHz", "ARM7 内核，72 MHz"], "answer": 1, "explanation": "F103 是 <strong>Cortex-M3</strong> 内核，最高 <strong>72 MHz</strong>。Cortex-M4 是 F4 系列（带 FPU/DSP），168 MHz 是 F4 的主频。ARM7 是更老的内核。", "pitfall": "易把 F103 与 F4 混淆——F4 才是 M4 + 168 MHz。"}, {"type": "choice", "points": 5, "question": "型号 STM32F103C8T6 中，「C」和「8」分别代表什么？", "options": ["C=48 引脚，8=64 KB Flash", "C=64 引脚，8=128 KB Flash", "C=48 引脚，8=512 KB Flash", "C=144 引脚，8=64 KB Flash"], "answer": 0, "explanation": "C = <strong>48 引脚</strong>，8 = <strong>64 KB Flash</strong>。R=64 引脚、Z=144 引脚；B=128K、C=256K、E=512K。", "pitfall": "易把引脚数编码（C/R/Z）与 Flash 容量编码（4/6/8/B/C/E）记混。"}, {"type": "choice", "points": 5, "question": "STM32F103C8T6 的 SRAM 容量大约是多少？", "options": ["512 KB", "20 KB", "64 KB", "1 MB"], "answer": 1, "explanation": "C8T6 的 SRAM 是 <strong>20 KB</strong>。64 KB 是它的 Flash 容量；512 KB/1 MB 是 Z 系列大容量芯片的配置。", "pitfall": "Flash 与 SRAM 是两个不同存储器，容量也完全不同，不要混淆。"}, {"type": "choice", "points": 5, "question": "STM32 内部，GPIO、USART1、ADC 这些外设挂在哪条总线上？", "options": ["APB1（36 MHz）", "FSMC 总线", "AHB 总线", "APB2（72 MHz）"], "answer": 3, "explanation": "GPIO、USART1、TIM1/8、ADC 都挂在 <strong>APB2（72 MHz）</strong>。APB1（36 MHz）挂 USART2/3、TIM2~4、I2C、SPI2/3、USB、CAN。", "pitfall": "注意：TIM2~4 在 APB1，而 TIM1/8 在 APB2——同是定时器总线却不同。"}, {"type": "choice", "points": 5, "question": "你写好的程序（main.c 编译后的机器码）烧写到芯片后存放在哪里？", "options": ["寄存器 R0~R12 中", "SRAM，断电后数据丢失", "Flash，断电后数据保留", "Option Bytes 配置区"], "answer": 2, "explanation": "程序存放在 <strong>Flash</strong> 中，<strong>断电不丢</strong>。SRAM 存运行时变量、断电即丢；寄存器是 CPU 内部暂存；Option Bytes 是系统配置。", "pitfall": "「程序存 Flash、变量存 SRAM」是最基本的存储模型，必须分清。"}, {"type": "choice", "points": 5, "question": "SWD 调试接口中，SWDIO 和 SWCLK 分别对应 F103 的哪两个引脚？", "options": ["PA14 和 PA13（可互换）", "PA15 和 PB3", "PA13 和 PA14", "PB4 和 PA15"], "answer": 2, "explanation": "SWDIO = <strong>PA13</strong>，SWCLK = <strong>PA14</strong>。PA15/PB3/PB4 是 JTAG 引脚，不用于 SWD。SWDIO 与 SWCLK 不能互换接反。", "pitfall": "PA13/14 是 SWD；PA15、PB3、PB4 是 JTAG 占用引脚——两者别混。"}, {"type": "choice", "points": 5, "question": "「32 位处理器」中的「32 位」最准确的含义是？", "options": ["处理器一次最多只能传输 32 个引脚的电平", "Flash 容量一定是 32 KB", "数据通路与通用寄存器宽度为 32 位，一次可处理/搬运 4 字节数据", "工作电压一定是 3.3V"], "answer": 2, "explanation": "「32 位」指 <strong>寄存器/数据通路宽度为 32 位</strong>，一次运算或读写最多 4 字节；寻址空间 2^32=4GB。与 Flash 容量、电压无关。", "pitfall": "位数指数据宽度，不是容量、不是引脚数、不是电压。"}, {"type": "choice", "points": 5, "question": "最小系统板中，8 MHz 晶振（HSE）的主要作用是什么？", "options": ["给 RTC 提供 1 Hz 秒脉冲", "给看门狗提供独立时钟", "给 USB 提供 48 MHz 时钟", "作为系统主时钟源，经 PLL 倍频得到 72 MHz"], "answer": 3, "explanation": "8 MHz HSE 是<strong>主时钟源</strong>，经 PLL 倍频到 72 MHz 给内核/外设。32.768 kHz 晶振才是给 RTC 的（32768=2^15，分频后正好 1 Hz）。", "pitfall": "两个晶振分工不同：8 MHz 管主频，32.768 kHz 管 RTC。"}, {"type": "choice", "points": 5, "question": "为什么用 STM32 的某个外设（如 GPIO）前必须先「开时钟」？", "options": ["STM32 默认关闭所有外设时钟以降低功耗，不开则寄存器写不进、外设不工作", "不开时钟，程序会编译报错", "开时钟是为了给外设单独供电 5V", "开时钟只是 Keil 的约定，与硬件无关"], "answer": 0, "explanation": "STM32 出于<strong>低功耗设计</strong>，复位后外设时钟默认关闭。必须先 <code>RCC_xxxClockCmd(..., ENABLE)</code> 打开对应总线时钟，外设寄存器才能写入、外设才工作。", "pitfall": "「开时钟」是硬件门控（gating），不是软件约定。"}, {"type": "choice", "points": 5, "question": "F103 的 JTAG 功能在复位后默认占用哪几个引脚（因此它们不能直接当普通 GPIO）？", "options": ["PB0、PB1、PB2 三个引脚", "PA15、PB3、PB4 三个引脚", "PA13、PA14 两个引脚", "PA0、PA1、PA2 三个引脚"], "answer": 1, "explanation": "JTAG 占用 <strong>PA15(JTDI)、PB3(JTDO)、PB4(JNTRST)</strong>；PA13/PA14 是 SWD。要用 PA15/PB3/PB4 当普通 IO，必须 <code>GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE)</code>。", "pitfall": "这是真实踩过的坑：按键用 PB3 失灵，就是因为没关 JTAG。"}, {"type": "choice", "points": 5, "question": "AHB 总线在 F103 内部的作用是？", "options": ["专门连接 APB1 与 APB2 外设", "给 GPIO 提供模拟信号的总线", "连接 USB 外设的专用总线", "高速总线，连接内核、Flash/SRAM 与 DMA"], "answer": 3, "explanation": "AHB 是<strong>系统高速总线</strong>，负责内核与 Flash/SRAM/DMA 之间的高速数据交换；APB1/APB2 是它下面的外设桥。", "pitfall": "总线层级：AHB（高速系统）→ APB1/APB2（外设桥）→ 外设。"}, {"type": "choice", "points": 5, "question": "ST 公司把 STM32 按内核/性能分成不同系列，以下对应关系正确的是？", "options": ["F4 系列用 Cortex-M4 内核，带 FPU 和 DSP 指令", "F0 系列用 Cortex-M3 内核", "F7 系列用 Cortex-M3 内核", "H7 系列主频只有 72 MHz"], "answer": 0, "explanation": "F4 = <strong>Cortex-M4 + FPU/DSP</strong>；F0 用 M0，F7 用 M7，H7 用 M7 且主频高达 480 MHz。F103（M3）是入门主流。", "pitfall": "各系列内核：F0=M0、F1=M3、F4=M4、F7/H7=M7。"}, {"type": "tf", "points": 3, "question": "STM32 的 SRAM 断电后数据会丢失，而 Flash 断电后数据保留。", "answer": 0, "explanation": "正确。SRAM 是易失性存储器（类比内存条），Flash 是非易失（类比硬盘）。", "pitfall": ""}, {"type": "tf", "points": 3, "question": "STM32F103C8T6 的地址空间可达 4 GB（2^32）。", "answer": 0, "explanation": "正确。32 位内核寻址空间就是 4 GB，但实际只映射了部分（Flash/SRAM/外设寄存器），其余地址空间无效。", "pitfall": "「寻址空间 4GB」不等于「真有 4GB 存储」。"}, {"type": "tf", "points": 3, "question": "STM32 复位后所有外设时钟默认全部打开，可以直接使用。", "answer": 1, "explanation": "错误。复位后外设时钟<strong>默认关闭</strong>，必须用 RCC 库函数打开对应总线时钟，否则外设不工作。", "pitfall": "「开时钟」是 STM32 开发的第一步，也是新手最常见的遗漏。"}, {"type": "tf", "points": 3, "question": "SWD 调试接口比 JTAG 使用的引脚更少，只需要 2 根信号线（SWDIO、SWCLK）。", "answer": 0, "explanation": "正确。SWD 是 2 线制（SWDIO + SWCLK），JTAG 需要 5 根（TMS/TCK/TDI/TDO/RST），所以 SWD 更省引脚。", "pitfall": ""}, {"type": "tf", "points": 3, "question": "32.768 kHz 晶振是给 RTC 实时时钟用的，因为 32768 = 2^15，分频后正好得到 1 Hz 秒脉冲。", "answer": 0, "explanation": "正确。这是 32768 Hz 被选为 RTC 晶振的根本原因：2 的幂，分频后精确 1 Hz。", "pitfall": "主晶振 8 MHz 与 RTC 晶振 32.768 kHz 不要混淆。"}, {"type": "tf", "points": 3, "question": "STM32F103ZET6 的 Flash 容量为 512 KB，引脚数为 144。", "answer": 0, "explanation": "正确。Z=144 引脚，E=512 KB Flash，T=LQFP 封装。这是大容量高配型号。", "pitfall": "Z 对应 144 脚、E 对应 512K，用「ZET6」反推验证命名规则。"}, {"type": "fill", "points": 4, "question": "STM32F103C8T6 中，「C」代表 ____ 个引脚，「8」代表 ____ KB Flash。", "answer": ["48", "64"], "explanation": "C=48 引脚，8=64 KB Flash。记忆：C=小封装，8=64K（2^6 KB）。", "pitfall": ""}, {"type": "fill", "points": 4, "question": "F103 内部总线体系中，____ 是 72 MHz 的高速外设总线，____ 是 36 MHz 的低速外设总线。", "answer": [["APB2", "APB2 总线"], ["APB1", "APB1 总线"]], "explanation": "APB2（72 MHz）挂 GPIO/USART1/ADC；APB1（36 MHz）挂 USART2/3、TIM2~4、I2C 等。", "pitfall": "先记 GPIO 在 APB2，其他的再对照表记。"}, {"type": "fill", "points": 4, "question": "SWD 调试的两根信号线分别是 ____（数据线，对应 PA13）和 ____（时钟线，对应 PA14）。", "answer": [["SWDIO", "SWDIO 数据线"], ["SWCLK", "SWCLK 时钟线"]], "explanation": "SWDIO=PA13（双向数据），SWCLK=PA14（时钟）。接反会导致 STLink 识别不到芯片。", "pitfall": "接反报 No target connected——踩过的坑。"}, {"type": "fill", "points": 4, "question": "STM32 复位后外设时钟默认 ____（开/关），使用前必须用 RCC 库函数打开对应总线的时钟。", "answer": ["关"], "explanation": "低功耗设计使外设时钟默认关闭。开时钟是每个外设初始化函数的第一句。", "pitfall": ""}, {"type": "short", "points": 10, "question": "请按字段拆解型号 STM32F103RCT6，说明每个字段的含义。", "answer": -1, "explanation": "<strong>参考答案</strong>：STM32=系列名；F=通用型；103=增强型；R=64 引脚；C=256 KB Flash；T=LQFP 封装；6=工业级温度（-40~85℃）。<br><br><strong>评分要点</strong>：每字段含义正确（共 7 个字段，答全 10 分；漏 1~2 个扣 2 分）。<br><br><strong>记忆口诀</strong>：C8=48脚64K、R8=64脚64K、RC=64脚256K、ZE=144脚512K。", "pitfall": "易把 C/R/Z（引脚）与 8/C/E（Flash）两套编码混淆。"}, {"type": "short", "points": 10, "question": "程序（机器码）存放在 STM32 的哪种存储器中？SRAM 又用来存什么？断电后两者的数据分别会怎样？", "answer": -1, "explanation": "<strong>参考答案</strong>：程序存 <strong>Flash</strong>（非易失，断电不丢）；SRAM 存运行时变量/堆栈/中间数据（易失，断电丢失）。Flash 类比硬盘、SRAM 类比内存条。<br><br><strong>评分要点</strong>：Flash 存程序且断电不丢（4 分）；SRAM 存变量且断电丢失（4 分）；类比/对比说明（2 分）。", "pitfall": "「程序存哪里」是基础题，必须一口答出 Flash。"}];
+var LABELS = {"page_title": "章节测试", "section": {"choice": "一、选择题", "multi": "二、多选题", "tf": "三、判断题", "fill": "四、填空题", "short": "五、简答题", "calc": "六、计算题", "code": "七、代码题", "essay": "八、问答题", "comprehensive": "九、综合题"}, "section_order": ["choice", "multi", "tf", "fill", "short", "calc", "code", "essay", "comprehensive"], "points_suffix": "分", "true_label": "正确", "false_label": "错误", "placeholder": "在此作答...", "code_placeholder": "在此编写代码...", "pitfall_prefix": "易错提醒：", "correct_label": "正确", "wrong_label": "错误", "partial_label": "部分正确", "answer_prefix": "正确答案：", "reference_label": "参考答案", "graded_label": "已批改", "grade_button": "提交批改", "score_label": "总分", "duration_prefix": "满分 100 分 | 建议 ", "duration_suffix": " 分钟 | 选择答案后点击提交批改"};
+
+// ─── Answer normalization (robust to how the JSON was authored) ──────
+// tf / choice answers may arrive as int index, boolean, letter ("A"),
+// or label string ("正确"/"错误"/"对"/"错"). All are coerced to an
+// option index so grading never silently fails on a type mismatch.
+
+function tfAnswerIndex(ans) {
+  // option 0 = true_label (正确), option 1 = false_label (错误)
+  if (typeof ans === 'boolean') return ans ? 0 : 1;
+  if (typeof ans === 'number') return ans === 0 ? 0 : 1;
+  var s = ('' + ans).trim().toLowerCase();
+  var truthy = ['0', 't', 'true', '正确', '对', '是', 'yes', 'y', '√', '✓'];
+  var falsy  = ['1', 'f', 'false', '错误', '错', '否', 'no', 'n', '×', 'x'];
+  if (truthy.indexOf(s) !== -1) return 0;
+  if (falsy.indexOf(s) !== -1) return 1;
+  return ans ? 0 : 1;
+}
+
+function choiceAnswerIndex(ans, options) {
+  if (typeof ans === 'number') return ans;
+  var s = ('' + ans).trim();
+  if (/^[A-Za-z]$/.test(s)) return s.toUpperCase().charCodeAt(0) - 65;
+  if (/^\d+$/.test(s)) return parseInt(s, 10);
+  if (options) {
+    for (var i = 0; i < options.length; i++) {
+      if (('' + options[i]).trim() === s) return i;
+    }
+  }
+  return parseInt(s, 10);
+}
+
+function multiAnswerSet(ans, options) {
+  var arr = Array.isArray(ans) ? ans : [ans];
+  var set = {};
+  for (var i = 0; i < arr.length; i++) {
+    set[choiceAnswerIndex(arr[i], options)] = true;
+  }
+  return set;
+}
+
+// Normalize free text for fill-in-the-blank comparison: trim, lowercase,
+// drop surrounding whitespace and common punctuation, unify full/half width.
+function normText(s) {
+  s = ('' + s).trim().toLowerCase();
+  s = s.replace(/[\s　]+/g, '');
+  s = s.replace(/[.,;:!?。，、；：！？“”"'（）()【】\[\]<>《》]/g, '');
+  // full-width ASCII -> half-width
+  s = s.replace(/[！-～]/g, function (c) {
+    return String.fromCharCode(c.charCodeAt(0) - 0xfee0);
+  });
+  return s;
+}
+
+// How many blanks does a fill question have? Count underscore / ＿ runs.
+function fillBlankCount(question) {
+  var m = ('' + question).match(/(_{2,}|＿+)/g);
+  return m ? m.length : 0;
+}
+
+// Coerce a fill `answer` into an array (one entry per blank) of accepted
+// answer lists. Handles: string, [synonyms], [[blank1 syns],[blank2 syns]].
+function fillBlankAnswers(ans, nBlanks) {
+  if (nBlanks < 1) nBlanks = 1;
+  if (!Array.isArray(ans)) return padBlanks([[ans]], nBlanks);
+  if (ans.length && Array.isArray(ans[0])) return padBlanks(ans, nBlanks);
+  // flat array of strings
+  if (nBlanks === 1) return [ans];                 // synonyms for one blank
+  if (ans.length === nBlanks) {                    // one answer per blank
+    return ans.map(function (a) { return [a]; });
+  }
+  return padBlanks([ans], nBlanks);                // ambiguous -> all on blank 1
+}
+
+function padBlanks(arr, n) {
+  var out = arr.slice(0, n);
+  while (out.length < n) out.push(['']);
+  return out;
+}
+
+// ─── Build ───────────────────────────────────────────────────────────
+
+function build() {
+  var container = document.getElementById('questions-container');
+  if (!container) { console.error('ExamPass: questions-container not found'); return; }
+
+  // Stable-sort questions by section order so headings group correctly
+  // regardless of input order.
+  var order = LABELS.section_order || [];
+  Q.forEach(function (q, i) { q._i = i; });
+  Q.sort(function (a, b) {
+    var oa = order.indexOf(a.type); if (oa === -1) oa = 99;
+    var ob = order.indexOf(b.type); if (ob === -1) ob = 99;
+    return oa - ob || a._i - b._i;
+  });
+
+  var h = '';
+  var sec = '';
+  var titles = LABELS.section;
+
+  for (var i = 0; i < Q.length; i++) {
+    var q = Q[i];
+    if (q.type !== sec) {
+      sec = q.type;
+      if (titles[q.type]) h += '<h3>' + titles[q.type] + '</h3>';
+    }
+
+    var qid = 'q' + i;
+    h += '<div class="q-card" id="card-' + qid + '">';
+    h += '<div class="q-num">' + (i + 1) + '. (' + q.points + ' ' + LABELS.points_suffix + ')</div>';
+
+    if (q.type === 'fill') {
+      h += '<div class="q-text">' + renderFill(q, qid) + '</div>';
+    } else {
+      h += '<div class="q-text">' + q.question + '</div>';
+    }
+
+    if (q.type === 'choice') {
+      var opts = q.options || [];
+      for (var j = 0; j < opts.length; j++) {
+        h += '<label class="option" id="opt-' + qid + '-' + j + '" onclick="sel(\'' + qid + '\',' + j + ')">';
+        h += '<input type="radio" name="' + qid + '" value="' + j + '">' + String.fromCharCode(65 + j) + '. ' + opts[j] + '</label>';
+      }
+    } else if (q.type === 'multi') {
+      var mopts = q.options || [];
+      for (var k = 0; k < mopts.length; k++) {
+        h += '<label class="option" id="opt-' + qid + '-' + k + '" onclick="toggle(\'' + qid + '\',' + k + ')">';
+        h += '<input type="checkbox" name="' + qid + '" value="' + k + '">' + String.fromCharCode(65 + k) + '. ' + mopts[k] + '</label>';
+      }
+    } else if (q.type === 'tf') {
+      h += '<label class="option" id="opt-' + qid + '-0" onclick="sel(\'' + qid + '\',0)">';
+      h += '<input type="radio" name="' + qid + '" value="0">' + LABELS.true_label + '</label>';
+      h += '<label class="option" id="opt-' + qid + '-1" onclick="sel(\'' + qid + '\',1)">';
+      h += '<input type="radio" name="' + qid + '" value="1">' + LABELS.false_label + '</label>';
+    } else if (q.type === 'fill') {
+      // inputs already rendered inline inside q-text
+    } else if (q.type === 'code') {
+      h += '<textarea class="q-textarea q-code" id="text-' + qid + '" placeholder="' + (LABELS.code_placeholder || LABELS.placeholder) + '" rows="8" spellcheck="false"></textarea>';
+    } else {
+      h += '<textarea class="q-textarea" id="text-' + qid + '" placeholder="' + LABELS.placeholder + '" rows="3"></textarea>';
+    }
+
+    h += '<div class="result" id="result-' + qid + '">';
+    h += '<span class="badge" id="badge-' + qid + '"></span><span id="correct-' + qid + '"></span>';
+    h += '<div class="explanation">' + (q.explanation || '') + '</div>';
+    if (q.pitfall) {
+      h += '<div class="pitfall">' + LABELS.pitfall_prefix + q.pitfall + '</div>';
+    }
+    h += '</div></div>';
+  }
+
+  container.innerHTML = h;
+
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([container]).catch(function (err) {
+      console.error('MathJax typeset error:', err);
+    });
+  }
+}
+
+// Render fill question text with inline <input> boxes replacing blanks.
+function renderFill(q, qid) {
+  var nBlanks = fillBlankCount(q.question);
+  var k = 0;
+  var html = ('' + q.question).replace(/(_{2,}|＿+)/g, function () {
+    var inp = '<input type="text" class="fill-input" id="fill-' + qid + '-' + k + '" autocomplete="off" spellcheck="false">';
+    k++;
+    return inp;
+  });
+  if (k === 0) {
+    // No markers in text -> append boxes based on answer shape
+    var n = fillBlankAnswers(q.answer, 1).length;
+    var ans = q.answer;
+    if (Array.isArray(ans)) n = Array.isArray(ans[0]) ? ans.length : (ans.length || 1);
+    if (n < 1) n = 1;
+    html += '<div class="fill-row">';
+    for (var b = 0; b < n; b++) {
+      if (n > 1) html += '<span class="fill-tag">' + (b + 1) + '.</span>';
+      html += '<input type="text" class="fill-input" id="fill-' + qid + '-' + b + '" autocomplete="off" spellcheck="false">';
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+document.addEventListener('DOMContentLoaded', build);
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+  build();
+}
+
+// ─── Selection handlers ──────────────────────────────────────────────
+
+function sel(qid, idx) {
+  var prefix = 'opt-' + qid + '-';
+  var all = document.querySelectorAll('[id^="' + prefix + '"]');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
+  var target = document.getElementById('opt-' + qid + '-' + idx);
+  if (target) target.classList.add('selected');
+  var radio = document.querySelector('input[name="' + qid + '"][value="' + idx + '"]');
+  if (radio) radio.checked = true;
+}
+
+function toggle(qid, idx) {
+  var box = document.querySelector('input[name="' + qid + '"][value="' + idx + '"]');
+  var label = document.getElementById('opt-' + qid + '-' + idx);
+  if (!box) return;
+  box.checked = !box.checked;
+  if (label) label.classList.toggle('selected', box.checked);
+}
+
+// ─── Grading ─────────────────────────────────────────────────────────
+
+function gradeAll() {
+  var score = 0;
+  for (var i = 0; i < Q.length; i++) {
+    var q = Q[i];
+    var qid = 'q' + i;
+    var card = document.getElementById('card-' + qid);
+    var result = document.getElementById('result-' + qid);
+    var badge = document.getElementById('badge-' + qid);
+    var correctEl = document.getElementById('correct-' + qid);
+    if (!card || !result) continue;
+
+    result.style.display = 'block';
+
+    if (q.type === 'choice' || q.type === 'tf') {
+      score += gradeSingle(q, qid, card, badge, correctEl);
+    } else if (q.type === 'multi') {
+      score += gradeMulti(q, qid, card, badge, correctEl);
+    } else if (q.type === 'fill') {
+      score += gradeFill(q, qid, card, badge, correctEl);
+    } else {
+      card.classList.add('correct');
+      badge.className = 'badge badge-ref';
+      badge.textContent = LABELS.reference_label;
+    }
+  }
+
+  var sb = document.getElementById('score-box');
+  if (sb) {
+    sb.style.display = 'block';
+    document.getElementById('score-num').textContent = roundScore(score);
+    sb.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  var opts = document.querySelectorAll('.option');
+  for (var a = 0; a < opts.length; a++) opts[a].style.pointerEvents = 'none';
+  var tas = document.querySelectorAll('.q-textarea');
+  for (var b = 0; b < tas.length; b++) tas[b].disabled = true;
+  var fis = document.querySelectorAll('.fill-input');
+  for (var c = 0; c < fis.length; c++) fis[c].disabled = true;
+
+  var btn = document.getElementById('grade-btn');
+  if (btn) { btn.disabled = true; btn.textContent = LABELS.graded_label; }
+
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise().catch(function (err) {
+      console.error('MathJax typeset error:', err);
+    });
+  }
+}
+
+function roundScore(s) {
+  return Math.round(s * 10) / 10;
+}
+
+function gradeSingle(q, qid, card, badge, correctEl) {
+  var ansIdx = q.type === 'tf' ? tfAnswerIndex(q.answer) : choiceAnswerIndex(q.answer, q.options);
+  var radio = document.querySelector('input[name="' + qid + '"]:checked');
+  if (radio && parseInt(radio.value, 10) === ansIdx) {
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+    correctEl.innerHTML = '';
+    var ok = document.getElementById('opt-' + qid + '-' + ansIdx);
+    if (ok) ok.classList.add('correct-answer');
+    return q.points;
+  }
+  card.classList.add('wrong');
+  badge.className = 'badge badge-no';
+  badge.textContent = LABELS.wrong_label;
+  var ansText = q.type === 'choice'
+    ? String.fromCharCode(65 + ansIdx) + '. ' + (q.options ? q.options[ansIdx] : '')
+    : (ansIdx === 0 ? LABELS.true_label : LABELS.false_label);
+  correctEl.innerHTML = LABELS.answer_prefix + ansText;
+  if (radio) {
+    var wrongOpt = document.getElementById('opt-' + qid + '-' + radio.value);
+    if (wrongOpt) wrongOpt.classList.add('wrong-answer');
+  }
+  var corr = document.getElementById('opt-' + qid + '-' + ansIdx);
+  if (corr) corr.classList.add('correct-answer');
+  return 0;
+}
+
+function gradeMulti(q, qid, card, badge, correctEl) {
+  var want = multiAnswerSet(q.answer, q.options);
+  var wantKeys = Object.keys(want).map(Number);
+  var checked = document.querySelectorAll('input[name="' + qid + '"]:checked');
+  var picked = [];
+  for (var i = 0; i < checked.length; i++) picked.push(parseInt(checked[i].value, 10));
+
+  var anyWrong = false, hitCorrect = 0;
+  for (var p = 0; p < picked.length; p++) {
+    if (want[picked[p]]) hitCorrect++;
+    else anyWrong = true;
+  }
+
+  // reveal correct / wrong option markers
+  var mopts = q.options || [];
+  for (var j = 0; j < mopts.length; j++) {
+    var el = document.getElementById('opt-' + qid + '-' + j);
+    if (!el) continue;
+    if (want[j]) el.classList.add('correct-answer');
+    else if (picked.indexOf(j) !== -1) el.classList.add('wrong-answer');
+  }
+
+  var earned;
+  if (!anyWrong && hitCorrect === wantKeys.length && picked.length === wantKeys.length) {
+    earned = q.points;
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+    correctEl.innerHTML = '';
+  } else if (!anyWrong && hitCorrect > 0) {
+    // 少选不错选 -> partial credit
+    earned = roundScore(q.points * hitCorrect / wantKeys.length);
+    card.classList.add('partial');
+    badge.className = 'badge badge-partial';
+    badge.textContent = LABELS.partial_label;
+    correctEl.innerHTML = LABELS.answer_prefix + multiAnswerText(wantKeys, mopts);
+  } else {
+    earned = 0;
+    card.classList.add('wrong');
+    badge.className = 'badge badge-no';
+    badge.textContent = LABELS.wrong_label;
+    correctEl.innerHTML = LABELS.answer_prefix + multiAnswerText(wantKeys, mopts);
+  }
+  return earned;
+}
+
+function multiAnswerText(keys, options) {
+  return keys.sort(function (a, b) { return a - b; }).map(function (k) {
+    return String.fromCharCode(65 + k) + '. ' + (options ? options[k] : '');
+  }).join('  ');
+}
+
+function gradeFill(q, qid, card, badge, correctEl) {
+  var nBlanks = fillBlankCount(q.question);
+  var blanks = fillBlankAnswers(q.answer, nBlanks);
+  var n = blanks.length;
+  var hit = 0;
+  var displays = [];
+
+  for (var b = 0; b < n; b++) {
+    var inp = document.getElementById('fill-' + qid + '-' + b);
+    var accepted = blanks[b] || [''];
+    var user = inp ? normText(inp.value) : '';
+    var ok = false;
+    for (var a = 0; a < accepted.length; a++) {
+      if (accepted[a] !== '' && normText(accepted[a]) === user && user !== '') { ok = true; break; }
+    }
+    if (inp) inp.classList.add(ok ? 'fill-ok' : 'fill-no');
+    if (ok) hit++;
+    displays.push((n > 1 ? (b + 1) + '. ' : '') + accepted.filter(function (x) { return x !== ''; }).join(' / '));
+  }
+
+  var earned = roundScore(q.points * hit / n);
+  correctEl.innerHTML = LABELS.answer_prefix + displays.join('   ');
+
+  if (hit === n) {
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+  } else if (hit > 0) {
+    card.classList.add('partial');
+    badge.className = 'badge badge-partial';
+    badge.textContent = LABELS.partial_label;
+  } else {
+    card.classList.add('wrong');
+    badge.className = 'badge badge-no';
+    badge.textContent = LABELS.wrong_label;
+  }
+  return earned;
+}
+
+</script>
+</body>
+</html>

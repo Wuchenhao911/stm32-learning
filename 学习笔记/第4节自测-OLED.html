@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 4 节自测 · OLED（交互式·含排序题）</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --border:#e2e8f0;
+    --text:#1e293b; --muted:#64748b;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --green:#059669; --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --orange:#d97706; --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --red:#dc2626; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.8;padding:24px 16px;}
+  .wrap{max-width:900px;margin:0 auto;}
+
+  .hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:22px 28px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .hero h1{font-size:22px;}
+  .hero .sub{opacity:.9;font-size:13px;}
+  .score-box{background:rgba(255,255,255,.18);border-radius:12px;padding:10px 22px;text-align:center;}
+  .score-box .n{font-size:30px;font-weight:800;}
+  .score-box .l{font-size:12px;opacity:.85;}
+
+  .q-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden;}
+  .q-head{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .q-type{font-size:11px;font-weight:700;padding:2px 10px;border-radius:12px;}
+  .t-sort{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd);}
+  .t-choice{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd);}
+  .t-tf{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);}
+  .t-fill{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd);}
+  .t-short{background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd);}
+  .q-pts{font-size:12px;color:var(--muted);margin-left:auto;}
+  .q-body{padding:16px 20px;}
+  .q-text{font-weight:600;margin-bottom:12px;}
+
+  .sort-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .sort-chip{padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:13px;transition:all .2s;}
+  .sort-chip:hover{border-color:var(--purple);background:var(--purple-bg);}
+  .sort-chip.picked{opacity:.35;pointer-events:none;text-decoration:line-through;}
+  .sort-seq{display:flex;flex-wrap:wrap;gap:8px;min-height:44px;border:1.5px dashed var(--border);border-radius:10px;padding:8px;background:#f8fafc;margin-bottom:8px;}
+  .sort-seq .item{background:var(--purple);color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;}
+  .sort-seq .item .x{cursor:pointer;font-weight:700;opacity:.8;}
+  .sort-seq .item .x:hover{opacity:1;}
+  .sort-msg{font-size:13px;margin-top:8px;min-height:22px;}
+  .sort-msg.ok{color:var(--green);font-weight:600;}
+  .sort-msg.no{color:var(--red);font-weight:600;}
+
+  .opts{display:flex;flex-direction:column;gap:8px;}
+  .opt{display:block;padding:9px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13.5px;transition:all .2s;background:#fff;}
+  .opt:hover{border-color:var(--blue);background:var(--blue-bg);}
+  .opt.correct{border-color:var(--green);background:var(--green-bg);color:#065f46;font-weight:600;}
+  .opt.wrong{border-color:var(--red);background:var(--red-bg);color:#991b1b;}
+  .opt.locked{cursor:default;opacity:.85;}
+  .exp{display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;}
+  .exp.show{display:block;}
+  .exp.ok{background:var(--green-bg);border:1px solid var(--green-bd);color:#065f46;}
+  .exp.no{background:var(--red-bg);border:1px solid var(--red-bd);color:#991b1b;}
+  .exp.sol{background:var(--blue-bg);border:1px solid var(--blue-bd);color:#1e3a8a;}
+
+  .fill-input{width:260px;max-width:90%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:Consolas,monospace;}
+  .fill-input:focus{outline:none;border-color:var(--blue);}
+
+  .sol-box{display:none;margin-top:10px;padding:12px 16px;background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:10px;font-size:13.5px;color:#1e3a8a;}
+  .sol-box.show{display:block;}
+
+  .btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#1d4ed8;}
+  .btn-ghost{background:#eef2f7;color:var(--text);}
+  .btn-ghost:hover{background:#e2e8f0;}
+
+  .bottom-bar{position:sticky;bottom:12px;text-align:center;margin-top:8px;}
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h1>第 4 节自测 · OLED</h1>
+      <div class="sub">江科大 P9-P10 · 排序/选择/判断/填空/简答 · 满分 100</div>
+    </div>
+    <div class="score-box"><div class="n" id="score">0</div><div class="l">当前得分</div></div>
+  </div>
+
+  <!-- ========== 排序题 1：I2C 传输流程 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-sort">排序</span><span class="q-text" style="margin:0">软件 I2C 向 OLED 发一个数据字节的完整流程顺序？</span><span class="q-pts">10 分</span></div>
+    <div class="q-body">
+      <div class="q-text" style="font-weight:400;font-size:13.5px">按正确顺序点击步骤：</div>
+      <div class="sort-pool" id="pool1">
+        <div class="sort-chip" data-id="0">起始条件 START（SCL 高时 SDA 高→低）</div>
+        <div class="sort-chip" data-id="1">发送设备地址 0x78（7 位地址 + 写位）</div>
+        <div class="sort-chip" data-id="2">从机应答 ACK</div>
+        <div class="sort-chip" data-id="3">发送控制字节（0x00 命令 / 0x40 数据）</div>
+        <div class="sort-chip" data-id="4">发送数据字节（8 位 + ACK）</div>
+        <div class="sort-chip" data-id="5">停止条件 STOP（SCL 高时 SDA 低→高）</div>
+      </div>
+      <div class="sort-seq" id="seq1"></div>
+      <div class="sort-msg" id="msg1"></div>
+      <button class="btn btn-primary" onclick="checkSort(1)">检查顺序</button>
+      <button class="btn btn-ghost" onclick="resetSort(1)">重来</button>
+    </div>
+  </div>
+
+  <!-- ========== 排序题 2：显示一个字符的流程 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-sort">排序</span><span class="q-text" style="margin:0">OLED 显示字符 'A' 的实现流程顺序？</span><span class="q-pts">10 分</span></div>
+    <div class="q-body">
+      <div class="q-text" style="font-weight:400;font-size:13.5px">按正确顺序点击：</div>
+      <div class="sort-pool" id="pool2">
+        <div class="sort-chip" data-id="0">调用 OLED_ShowChar(x, y, 'A')</div>
+        <div class="sort-chip" data-id="1">在 OLED_Font.h 字模表里查 'A' 的 8 字节点阵数据</div>
+        <div class="sort-chip" data-id="2">逐字节逐位把"1"的像素点亮（写显存）</div>
+        <div class="sort-chip" data-id="3">通过 I2C 把显存数据发送给 SSD1306</div>
+        <div class="sort-chip" data-id="4">屏幕上对应位置出现字符 'A'</div>
+      </div>
+      <div class="sort-seq" id="seq2"></div>
+      <div class="sort-msg" id="msg2"></div>
+      <button class="btn btn-primary" onclick="checkSort(2)">检查顺序</button>
+      <button class="btn btn-ghost" onclick="resetSort(2)">重来</button>
+    </div>
+  </div>
+
+  <!-- ========== 选择题 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-choice">选择</span><span class="q-text" style="margin:0">选择题（6 题 × 5 分）</span></div>
+    <div class="q-body">
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">1. 0.96 寸 OLED（SSD1306）的分辨率是多少？</div>
+        <div class="opts" id="c0">
+          <div class="opt" data-ok="1">128 × 64 像素</div>
+          <div class="opt" data-ok="0">64 × 32 像素</div>
+          <div class="opt" data-ok="0">1024 × 768 像素</div>
+          <div class="opt" data-ok="0">320 × 240 像素</div>
+        </div>
+        <div class="exp" id="e0"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">2. 江科大例程 OLED 用的 I2C 设备地址（含写位）是多少？</div>
+        <div class="opts" id="c1">
+          <div class="opt" data-ok="1">0x78（7 位地址 0x3C 左移 1 位）</div>
+          <div class="opt" data-ok="0">0x3C（7 位地址本身就是 0x78）</div>
+          <div class="opt" data-ok="0">0x40（数据控制字节）</div>
+          <div class="opt" data-ok="0">0x00（命令控制字节）</div>
+        </div>
+        <div class="exp" id="e1"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">3. SSD1306 中，一个 ASCII 字符（8×8）占多少字节？一个汉字（16×16）呢？</div>
+        <div class="opts" id="c2">
+          <div class="opt" data-ok="1">ASCII 8 字节（8 列 × 8 行），汉字 32 字节</div>
+          <div class="opt" data-ok="0">ASCII 1 字节，汉字 2 字节</div>
+          <div class="opt" data-ok="0">ASCII 8 字节，汉字 16 字节</div>
+          <div class="opt" data-ok="0">ASCII 64 字节，汉字 256 字节</div>
+        </div>
+        <div class="exp" id="e2"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">4. 软件 I2C 相比硬件 I2C 的主要优势是什么？</div>
+        <div class="opts" id="c3">
+          <div class="opt" data-ok="1">引脚任意、实现直观好调试、避开 F103 硬件 I2C 的兼容性坑</div>
+          <div class="opt" data-ok="0">传输速度比硬件 I2C 快很多</div>
+          <div class="opt" data-ok="0">不需要 GPIO 配置</div>
+          <div class="opt" data-ok="0">不需要开外设时钟</div>
+        </div>
+        <div class="exp" id="e3"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">5. OLED_ShowNum(x, y, num, len) 里的 len 参数作用是什么？</div>
+        <div class="opts" id="c4">
+          <div class="opt" data-ok="1">数字的总位数，不足前面补 0（如 len=4 时 12 → "0012"）</div>
+          <div class="opt" data-ok="0">数字的字体大小（放大倍数）</div>
+          <div class="opt" data-ok="0">显示亮度等级</div>
+          <div class="opt" data-ok="0">显示位置的行号</div>
+        </div>
+        <div class="exp" id="e4"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:0">
+        <div class="q-text">6. OLED_ShowString 的坐标范围是？（江科大 8×8 字模封装）</div>
+        <div class="opts" id="c5">
+          <div class="opt" data-ok="1">x=1~16 列，y=1~4 行</div>
+          <div class="opt" data-ok="0">x=0~127，y=0~63</div>
+          <div class="opt" data-ok="0">x=1~8，y=1~8</div>
+          <div class="opt" data-ok="0">x 任意，y=1~2</div>
+        </div>
+        <div class="exp" id="e5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 判断题 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-tf">判断</span><span class="q-text" style="margin:0">判断题（4 题 × 3 分）</span></div>
+    <div class="q-body">
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">1. OLED 软件 I2C 驱动的底层，本质上就是第 3 节学的 GPIO 推挽输出在"画"协议波形。</div>
+        <div class="opts" id="t0">
+          <div class="opt" data-ok="1">正确</div>
+          <div class="opt" data-ok="0">错误</div>
+        </div>
+        <div class="exp" id="te0"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">2. I2C 总线只需要 SCL 一根线就能完成通信。</div>
+        <div class="opts" id="t1">
+          <div class="opt" data-ok="0">正确</div>
+          <div class="opt" data-ok="1">错误</div>
+        </div>
+        <div class="exp" id="te1"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">3. 用 OLED 显示前必须调用 OLED_Init()，否则屏幕全黑。</div>
+        <div class="opts" id="t2">
+          <div class="opt" data-ok="1">正确</div>
+          <div class="opt" data-ok="0">错误</div>
+        </div>
+        <div class="exp" id="te2"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:0">
+        <div class="q-text">4. OLED_ShowString(20, 1, "hi") 是正确的调用（第 20 列在范围内）。</div>
+        <div class="opts" id="t3">
+          <div class="opt" data-ok="0">正确</div>
+          <div class="opt" data-ok="1">错误</div>
+        </div>
+        <div class="exp" id="te3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 填空题 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-fill">填空</span><span class="q-text" style="margin:0">填空题（3 题 × 4 分）</span></div>
+    <div class="q-body">
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">1. I2C 的两根线分别是 ____（时钟线，江科大接 PB8）和 ____（数据线，接 PB9）。</div>
+        <div class="exp sol" id="fe0"></div>
+        <button class="btn btn-ghost" style="margin-top:6px" onclick="checkFill(0)">检查</button>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">2. OLED 初始化后，清屏函数是 ____（函数名）。</div>
+        <div class="exp sol" id="fe1"></div>
+        <button class="btn btn-ghost" style="margin-top:6px" onclick="checkFill(1)">检查</button>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:0">
+        <div class="q-text">3. 显示有符号数（可正可负，如编码器计数）应调用 ____（函数名）。</div>
+        <div class="exp sol" id="fe2"></div>
+        <button class="btn btn-ghost" style="margin-top:6px" onclick="checkFill(2)">检查</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 简答题 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-short">简答</span><span class="q-text" style="margin:0">简答题（2 题 × 8 分）</span></div>
+    <div class="q-body">
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">1. 用自己的话说：OLED 显示一个字符的原理（字模是什么？怎么变成屏幕上的字？）。</div>
+        <button class="btn btn-ghost" onclick="toggleSol('s0')">先自答，再看参考答案</button>
+        <div class="sol-box" id="s0"><b>参考答案</b>：字符在 OLED_Font.h 里存为 8×8 点阵（8 字节，每字节一列，1=亮 0=灭）。显示时：① 查字模表取该字符 8 字节 → ② 逐位把"1"的像素写进显存 → ③ 通过 I2C 把显存发给 SSD1306 → ④ 对应像素点亮形成字符。汉字是 16×16 = 32 字节，道理相同。<br><b>评分要点</b>：字模=点阵数据（3 分）+ 查表（2 分）+ 逐位画点/I2C 发送（3 分）。</div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:0">
+        <div class="q-text">2. 为什么江科大教程用软件 I2C 而不是硬件 I2C 驱动 OLED？</div>
+        <button class="btn btn-ghost" onclick="toggleSol('s1')">先自答，再看参考答案</button>
+        <div class="sol-box" id="s1"><b>参考答案</b>：① 软件 I2C 用 GPIO 翻转手动模拟时序，<b>引脚可以任意选</b>（硬件 I2C 引脚固定）；② 代码直观、容易调试（能单步看每根线的状态）；③ F103 的硬件 I2C 有兼容性问题（容易卡死）的"传说"，软件实现更稳定可靠。缺点是速度慢，但对 OLED 这类低速显示设备完全够用。<br><b>评分要点</b>：引脚灵活（3 分）+ 直观好调试（2 分）+ F103 硬件 I2C 兼容性坑（3 分）。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-primary" onclick="gradeAll()">交卷并评分</button>
+  </div>
+  <div class="footer">第 4 节自测 · 江科大 STM32 入门教程 · 排序题可重做，选择题点选即判</div>
+</div>
+
+<script>
+/* ===== 排序题 ===== */
+const sortAns = {1:[0,1,2,3,4,5], 2:[0,1,2,3,4]};
+const sortScore = {1:0, 2:0};
+const sortSeq = {1:[], 2:[]};
+
+function initSort(n){
+  const pool = document.getElementById('pool'+n);
+  pool.querySelectorAll('.sort-chip').forEach(ch=>{
+    ch.classList.remove('picked');
+    ch.onclick = ()=>pickSort(n, +ch.dataset.id);
+  });
+  document.getElementById('seq'+n).innerHTML = '';
+  document.getElementById('msg'+n).textContent = '';
+  document.getElementById('msg'+n).className = 'sort-msg';
+  sortSeq[n] = [];
+  sortScore[n] = 0;
+}
+function pickSort(n, id){
+  if(sortSeq[n].includes(id)) return;
+  sortSeq[n].push(id);
+  renderSeq(n);
+  const pool = document.getElementById('pool'+n);
+  pool.querySelectorAll('.sort-chip').forEach(ch=>{
+    if(+ch.dataset.id === id) ch.classList.add('picked');
+  });
+}
+function renderSeq(n){
+  const box = document.getElementById('seq'+n);
+  box.innerHTML = '';
+  sortSeq[n].forEach((id,i)=>{
+    const d = document.createElement('div');
+    d.className = 'item';
+    const label = document.querySelector('#pool'+n).querySelector('[data-id="'+id+'"]').textContent;
+    d.innerHTML = '<span>'+(i+1)+'. '+label+'</span><span class="x" onclick="undoSort('+n+','+id+')">✕</span>';
+    box.appendChild(d);
+  });
+}
+function undoSort(n, id){
+  sortSeq[n] = sortSeq[n].filter(x=>x!==id);
+  const pool = document.getElementById('pool'+n);
+  pool.querySelectorAll('.sort-chip').forEach(ch=>{
+    if(+ch.dataset.id === id) ch.classList.remove('picked');
+  });
+  renderSeq(n);
+}
+function checkSort(n){
+  const msg = document.getElementById('msg'+n);
+  if(sortSeq[n].length !== sortAns[n].length){
+    msg.className = 'sort-msg no';
+    msg.textContent = '还没排完，共需 '+sortAns[n].length+' 步，当前 '+sortSeq[n].length+' 步';
+    return;
+  }
+  let ok = true;
+  sortSeq[n].forEach((id,i)=>{ if(id !== sortAns[n][i]) ok = false; });
+  if(ok){
+    sortScore[n] = 10;
+    msg.className = 'sort-msg ok';
+    msg.textContent = '✓ 顺序完全正确！+10 分';
+  } else {
+    let pref = 0;
+    while(pref < sortSeq[n].length && sortSeq[n][pref] === sortAns[n][pref]) pref++;
+    sortScore[n] = pref >= Math.ceil(sortAns[n].length/2) ? 5 : 0;
+    msg.className = 'sort-msg no';
+    msg.textContent = '✗ 顺序不对（正确前缀 '+pref+' 步'+(sortScore[n]?', +5 分':'，不得分')+'）。正确顺序：'+sortAns[n].map(a=>{return document.querySelector('#pool'+n).querySelector('[data-id="'+a+'"]').textContent;}).join(' → ');
+  }
+  updateScore();
+}
+function resetSort(n){ initSort(n); updateScore(); }
+for(let n=1;n<=2;n++) initSort(n);
+
+/* ===== 选择/判断题 ===== */
+const choiceExp = {
+  0:{ok:'✓ 对！0.96 寸 SSD1306 是 128×64。',no:'✗ 错。SSD1306 分辨率固定 128×64 像素（64 行分 8 页）。'},
+  1:{ok:'✓ 对！7 位地址 0x3C 左移 1 位 + 写位 0 = 0x78。',no:'✗ 错。0x78 = 0x3C<<1 | 0（写位）。0x40 是数据控制字节，0x00 是命令控制字节。'},
+  2:{ok:'✓ 对！8×8=8 字节，16×16=32 字节。',no:'✗ 错。每列一个字节：8 列→8 字节；16 列→16 字节 × 2（分高低字节）= 32 字节。'},
+  3:{ok:'✓ 对！软件 I2C 引脚随意、直观、且避开 F103 硬件 I2C 的兼容性问题。',no:'✗ 错。软件 I2C 速度比硬件慢；它照样要配 GPIO、开时钟。优势在引脚灵活 + 稳定 + 好调试。'},
+  4:{ok:'✓ 对！len 是位数，不足补 0 对齐，防止数字变化时显示错位。',no:'✗ 错。len 是总位数（不足补 0）。如 ShowNum(1,1,12,4) → "0012"。'},
+  5:{ok:'✓ 对！8×8 字模 → 128/8=16 列、64/8=8 行，江科大封装成 4 行。',no:'✗ 错。坐标 x=1~16 列、y=1~4 行。0~127/0~63 是像素坐标，不是字符坐标。'},
+};
+const tfExp = {
+  0:{ok:'✓ 对！OLED 驱动底层就是 GPIO 推挽输出模拟 SCL/SDA 波形。',no:'✗ 错。软件 I2C 正是用 GPIO 翻转模拟时序，第 3 节的推挽输出在这里用上了。'},
+  1:{ok:'✓ 对！I2C 要 SCL（时钟）+ SDA（数据）两根线。',no:'✗ 错。I2C 是两线制：SCL 时钟 + SDA 数据，缺一不可。'},
+  2:{ok:'✓ 对！所有外设都要先 Init 再使用，OLED 忘了 Init 屏幕全黑。',no:'✗ 错。OLED_Init() 负责上电时序+配置命令+清屏，漏了屏幕黑屏。'},
+  3:{ok:'✓ 对！x 最大 16，20 超界会导致显示错乱。',no:'✗ 错。第 20 列超出 1~16 的范围，显示会错乱。'},
+};
+
+let chosen = {};
+function bindChoice(containerId, expId, qKey, expMap){
+  const box = document.getElementById(containerId);
+  box.querySelectorAll('.opt').forEach(opt=>{
+    opt.onclick = ()=>{
+      if(opt.classList.contains('locked')) return;
+      box.querySelectorAll('.opt').forEach(o=>o.classList.add('locked'));
+      const ok = +opt.dataset.ok === 1;
+      opt.classList.add(ok?'correct':'wrong');
+      const exp = document.getElementById(expId);
+      exp.className = 'exp show '+(ok?'ok':'no');
+      exp.innerHTML = ok ? expMap.ok : expMap.no;
+      chosen[qKey] = ok;
+      updateScore();
+    };
+  });
+}
+bindChoice('c0','e0','c0',choiceExp[0]);
+bindChoice('c1','e1','c1',choiceExp[1]);
+bindChoice('c2','e2','c2',choiceExp[2]);
+bindChoice('c3','e3','c3',choiceExp[3]);
+bindChoice('c4','e4','c4',choiceExp[4]);
+bindChoice('c5','e5','c5',choiceExp[5]);
+bindChoice('t0','te0','t0',tfExp[0]);
+bindChoice('t1','te1','t1',tfExp[1]);
+bindChoice('t2','te2','t2',tfExp[2]);
+bindChoice('t3','te3','t3',tfExp[3]);
+
+/* ===== 填空 ===== */
+const fillAns = {
+  f0: {ans:['SCL','SDA'], label:'SCL（时钟）和 SDA（数据）'},
+  f1: {ans:['OLED_Clear'], label:'OLED_Clear()'},
+  f2: {ans:['OLED_ShowSignedNum'], label:'OLED_ShowSignedNum()'},
+};
+const fillScore = {f0:0, f1:0, f2:0};
+function checkFill(idx){
+  const inp = document.querySelectorAll('.fill-input')[idx];
+  const val = inp ? inp.value.trim() : '';
+  const conf = fillAns['f'+idx];
+  const exp = document.getElementById('fe'+idx);
+  const ok = conf.ans.some(a=>val.toLowerCase().includes(a.toLowerCase()));
+  fillScore['f'+idx] = ok ? 4 : 0;
+  exp.className = 'exp sol show';
+  exp.textContent = ok ? '✓ 正确！' : '✗ 不对，正确答案是：'+conf.label;
+  updateScore();
+}
+
+/* ===== 简答 ===== */
+function toggleSol(id){
+  document.getElementById(id).classList.toggle('show');
+}
+
+/* ===== 计分 ===== */
+function updateScore(){
+  let total = 0;
+  total += sortScore[1] + sortScore[2];
+  total += (chosen.c0?5:0)+(chosen.c1?5:0)+(chosen.c2?5:0)+(chosen.c3?5:0)+(chosen.c4?5:0)+(chosen.c5?5:0);
+  total += (chosen.t0?3:0)+(chosen.t1?3:0)+(chosen.t2?3:0)+(chosen.t3?3:0);
+  total += fillScore.f0 + fillScore.f1 + fillScore.f2;
+  document.getElementById('score').textContent = total;
+}
+function gradeAll(){
+  updateScore();
+  const s = document.getElementById('score').textContent;
+  let tip = '';
+  if(s >= 85) tip = ' 🎉 优秀！OLED 掌握扎实';
+  else if(s >= 70) tip = ' 👍 良好，看看错题';
+  else if(s >= 55) tip = ' 📖 及格，回到知识点卡玩虚拟屏';
+  else tip = ' ⚠️ 薄弱，重点看 I2C 时序和字模原理';
+  alert('总分：'+s+' / 100'+tip);
+}
+</script>
+</body>
+</html>

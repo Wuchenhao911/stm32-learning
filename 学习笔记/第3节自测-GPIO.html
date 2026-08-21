@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 3 节自测 · GPIO（交互式·含排序题）</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --border:#e2e8f0;
+    --text:#1e293b; --muted:#64748b;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --green:#059669; --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --orange:#d97706; --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --red:#dc2626; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.8;padding:24px 16px;}
+  .wrap{max-width:900px;margin:0 auto;}
+
+  .hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:22px 28px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+  .hero h1{font-size:22px;}
+  .hero .sub{opacity:.9;font-size:13px;}
+  .score-box{background:rgba(255,255,255,.18);border-radius:12px;padding:10px 22px;text-align:center;}
+  .score-box .n{font-size:30px;font-weight:800;}
+  .score-box .l{font-size:12px;opacity:.85;}
+
+  .q-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden;}
+  .q-head{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .q-type{font-size:11px;font-weight:700;padding:2px 10px;border-radius:12px;}
+  .t-sort{background:var(--purple-bg,var(--blue-bg));color:#7c3aed;border:1px solid #ddd6fe;}
+  .t-choice{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd);}
+  .t-tf{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);}
+  .t-fill{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-bd);}
+  .t-short{background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;}
+  .q-pts{font-size:12px;color:var(--muted);margin-left:auto;}
+  .q-body{padding:16px 20px;}
+  .q-text{font-weight:600;margin-bottom:12px;}
+
+  /* 排序题 */
+  .sort-pool{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+  .sort-chip{padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:13px;transition:all .2s;}
+  .sort-chip:hover{border-color:var(--blue);background:var(--blue-bg);}
+  .sort-chip.picked{opacity:.35;pointer-events:none;text-decoration:line-through;}
+  .sort-seq{display:flex;flex-wrap:wrap;gap:8px;min-height:44px;border:1.5px dashed var(--border);border-radius:10px;padding:8px;background:#f8fafc;margin-bottom:8px;}
+  .sort-seq .item{background:var(--blue);color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;}
+  .sort-seq .item .x{cursor:pointer;font-weight:700;opacity:.8;}
+  .sort-seq .item .x:hover{opacity:1;}
+  .sort-msg{font-size:13px;margin-top:8px;min-height:22px;}
+  .sort-msg.ok{color:var(--green);font-weight:600;}
+  .sort-msg.no{color:var(--red);font-weight:600;}
+
+  /* 选择/判断 */
+  .opts{display:flex;flex-direction:column;gap:8px;}
+  .opt{display:block;padding:9px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13.5px;transition:all .2s;background:#fff;}
+  .opt:hover{border-color:var(--blue);background:var(--blue-bg);}
+  .opt.correct{border-color:var(--green);background:var(--green-bg);color:#065f46;font-weight:600;}
+  .opt.wrong{border-color:var(--red);background:var(--red-bg);color:#991b1b;}
+  .opt.locked{cursor:default;opacity:.85;}
+  .exp{display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;}
+  .exp.show{display:block;}
+  .exp.ok{background:var(--green-bg);border:1px solid var(--green-bd);color:#065f46;}
+  .exp.no{background:var(--red-bg);border:1px solid var(--red-bd);color:#991b1b;}
+  .exp.sol{background:var(--blue-bg);border:1px solid var(--blue-bd);color:#1e3a8a;}
+
+  /* 填空 */
+  .fill-input{width:260px;max-width:90%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:Consolas,monospace;}
+  .fill-input:focus{outline:none;border-color:var(--blue);}
+
+  /* 简答 */
+  .sol-box{display:none;margin-top:10px;padding:12px 16px;background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:10px;font-size:13.5px;color:#1e3a8a;}
+  .sol-box.show{display:block;}
+
+  .btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#1d4ed8;}
+  .btn-ghost{background:#eef2f7;color:var(--text);}
+  .btn-ghost:hover{background:#e2e8f0;}
+
+  .bottom-bar{position:sticky;bottom:12px;text-align:center;margin-top:8px;}
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <h1>第 3 节自测 · GPIO</h1>
+      <div class="sub">江科大 P5-P8 · 排序/选择/判断/填空/简答 · 满分 100</div>
+    </div>
+    <div class="score-box"><div class="n" id="score">0</div><div class="l">当前得分</div></div>
+  </div>
+
+  <!-- ========== 排序题 1：GPIO 输出初始化顺序 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-sort">排序</span><span class="q-text" style="margin:0">配置 GPIO 输出（点亮 LED）的正确顺序是什么？</span><span class="q-pts">10 分</span></div>
+    <div class="q-body">
+      <div class="q-text" style="font-weight:400;font-size:13.5px">按正确顺序点击下方步骤，排入序列框。点 ✕ 可撤销。完成后点「检查顺序」。</div>
+      <div class="sort-pool" id="pool1">
+        <div class="sort-chip" data-id="0">RCC_APB2PeriphClockCmd 开 GPIOA 时钟</div>
+        <div class="sort-chip" data-id="1">GPIO_SetBits / GPIO_ResetBits 控制电平</div>
+        <div class="sort-chip" data-id="2">定义 GPIO_InitTypeDef 结构体并填写引脚/模式/速度</div>
+        <div class="sort-chip" data-id="3">GPIO_Init(GPIOA, &amp;结构体) 完成初始化</div>
+      </div>
+      <div class="sort-seq" id="seq1"></div>
+      <div class="sort-msg" id="msg1"></div>
+      <button class="btn btn-primary" onclick="checkSort(1)">检查顺序</button>
+      <button class="btn btn-ghost" onclick="resetSort(1)">重来</button>
+    </div>
+  </div>
+
+  <!-- ========== 排序题 2：按键扫描流程 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-sort">排序</span><span class="q-text" style="margin:0">按键扫描（含消抖与松手检测）的执行顺序？</span><span class="q-pts">10 分</span></div>
+    <div class="q-body">
+      <div class="q-text" style="font-weight:400;font-size:13.5px">按正确顺序点击：</div>
+      <div class="sort-pool" id="pool2">
+        <div class="sort-chip" data-id="0">读取引脚 ==0（检测到按下）</div>
+        <div class="sort-chip" data-id="1">Delay_ms(20) 消抖</div>
+        <div class="sort-chip" data-id="2">while(引脚==0) 等待松手（防连按）</div>
+        <div class="sort-chip" data-id="3">再次 Delay_ms(20) 消抖后返回键码</div>
+      </div>
+      <div class="sort-seq" id="seq2"></div>
+      <div class="sort-msg" id="msg2"></div>
+      <button class="btn btn-primary" onclick="checkSort(2)">检查顺序</button>
+      <button class="btn btn-ghost" onclick="resetSort(2)">重来</button>
+    </div>
+  </div>
+
+  <!-- ========== 排序题 3：流水灯原理 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-sort">排序</span><span class="q-text" style="margin:0">8 个 LED 流水灯「右移一位点亮」的实现思路顺序？</span><span class="q-pts">10 分</span></div>
+    <div class="q-body">
+      <div class="q-text" style="font-weight:400;font-size:13.5px">按正确顺序点击：</div>
+      <div class="sort-pool" id="pool3">
+        <div class="sort-chip" data-id="0">for 循环 i 从 0 到 7</div>
+        <div class="sort-chip" data-id="1">GPIO_Write(GPIOA, ~(0x01 &lt;&lt; i)) 只有第 i 位为 0</div>
+        <div class="sort-chip" data-id="2">Delay_ms(100) 停顿</div>
+        <div class="sort-chip" data-id="3">下一轮 i+1，亮点向右移一格</div>
+      </div>
+      <div class="sort-seq" id="seq3"></div>
+      <div class="sort-msg" id="msg3"></div>
+      <button class="btn btn-primary" onclick="checkSort(3)">检查顺序</button>
+      <button class="btn btn-ghost" onclick="resetSort(3)">重来</button>
+    </div>
+  </div>
+
+  <!-- ========== 选择题 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-choice">选择</span><span class="q-text" style="margin:0">选择题（6 题 × 5 分）</span></div>
+    <div class="q-body">
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">1. 按键一端接 GND（低有效），GPIO 应配置为？</div>
+        <div class="opts" id="c0">
+          <div class="opt" data-ok="1">上拉输入 IPU，按下读到 0，判断 ==0</div>
+          <div class="opt" data-ok="0">下拉输入 IPD，按下读到 1，判断 ==1</div>
+          <div class="opt" data-ok="0">推挽输出 PP，直接驱动按键</div>
+          <div class="opt" data-ok="0">浮空输入，靠按键自身决定</div>
+        </div>
+        <div class="exp" id="e0"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">2. 推挽输出（Out_PP）的特点是什么？</div>
+        <div class="opts" id="c1">
+          <div class="opt" data-ok="1">一上一下两个开关，输出 0/1 都有强驱动能力</div>
+          <div class="opt" data-ok="0">只能拉低，拉高靠外部上拉电阻</div>
+          <div class="opt" data-ok="0">只能读取输入，不能输出</div>
+          <div class="opt" data-ok="0">引脚交给片上外设控制</div>
+        </div>
+        <div class="exp" id="e1"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">3. PWM 输出（TIM 驱动引脚）时，GPIO 应配置为哪种模式？</div>
+        <div class="opts" id="c2">
+          <div class="opt" data-ok="1">复用推挽输出 AF_PP</div>
+          <div class="opt" data-ok="0">普通推挽输出 Out_PP</div>
+          <div class="opt" data-ok="0">模拟输入 AIN</div>
+          <div class="opt" data-ok="0">开漏输出 Out_OD</div>
+        </div>
+        <div class="exp" id="e2"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">4. 机械按键消抖，软件方案一般延时多少毫秒？</div>
+        <div class="opts" id="c3">
+          <div class="opt" data-ok="1">约 10~20ms（覆盖按键抖动时间）</div>
+          <div class="opt" data-ok="0">约 1~2µs（越短越好）</div>
+          <div class="opt" data-ok="0">约 1 秒（确保稳定）</div>
+          <div class="opt" data-ok="0">不需要消抖，直接读就行</div>
+        </div>
+        <div class="exp" id="e3"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">5. F103 里哪些引脚复位后默认被 JTAG 占用，不能直接当普通 GPIO？</div>
+        <div class="opts" id="c4">
+          <div class="opt" data-ok="1">PA15、PB3、PB4</div>
+          <div class="opt" data-ok="0">PA13、PA14</div>
+          <div class="opt" data-ok="0">PB0、PB1、PB2</div>
+          <div class="opt" data-ok="0">PC13、PC14、PC15</div>
+        </div>
+        <div class="exp" id="e4"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:0">
+        <div class="q-text">6. 蓝板 LED「低电平点亮」，原因是？</div>
+        <div class="opts" id="c5">
+          <div class="opt" data-ok="1">LED 阳极接 VCC、阴极接 GPIO，GPIO 输出 0 时电流经 LED 到 GND</div>
+          <div class="opt" data-ok="0">GPIO 输出高电平时 LED 负极被拉高到 3.3V</div>
+          <div class="opt" data-ok="0">LED 内部结构决定了只有低电平能通过</div>
+          <div class="opt" data-ok="0">芯片设计如此，与接法无关</div>
+        </div>
+        <div class="exp" id="e5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 判断题 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-tf">判断</span><span class="q-text" style="margin:0">判断题（4 题 × 3 分）</span></div>
+    <div class="q-body">
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">1. 使用 GPIO 前必须先调用 RCC_APB2PeriphClockCmd 开启 GPIO 所在总线时钟。</div>
+        <div class="opts" id="t0">
+          <div class="opt" data-ok="1">正确</div>
+          <div class="opt" data-ok="0">错误</div>
+        </div>
+        <div class="exp" id="te0"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">2. 浮空输入模式下，引脚外部什么都没接时，读数稳定为 0。</div>
+        <div class="opts" id="t1">
+          <div class="opt" data-ok="0">正确</div>
+          <div class="opt" data-ok="1">错误</div>
+        </div>
+        <div class="exp" id="te1"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">3. GPIO_Speed 指的是引脚的最大翻转速度（2/10/50MHz），写 50MHz 通常没错。</div>
+        <div class="opts" id="t2">
+          <div class="opt" data-ok="1">正确</div>
+          <div class="opt" data-ok="0">错误</div>
+        </div>
+        <div class="exp" id="te2"></div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:0">
+        <div class="q-text">4. 开漏输出（Out_OD）适合 I2C 总线，因为多个设备可以共同拉低信号线（线与）。</div>
+        <div class="opts" id="t3">
+          <div class="opt" data-ok="1">正确</div>
+          <div class="opt" data-ok="0">错误</div>
+        </div>
+        <div class="exp" id="te3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 填空题 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-fill">填空</span><span class="q-text" style="margin:0">填空题（3 题 × 4 分）</span></div>
+    <div class="q-body">
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">1. GPIO 初始化三步的第二步是定义并填写 <input class="fill-input" id="f0" placeholder="结构体类型名" style="width:200px"> 结构体（引脚/模式/速度）。</div>
+        <div class="exp sol" id="fe0"></div>
+        <button class="btn btn-ghost" style="margin-top:6px" onclick="checkFill(0,'GPIO_InitTypeDef')">检查</button>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:12px">
+        <div class="q-text">2. 读按键输入电平用库函数 <input class="fill-input" id="f1" placeholder="函数名(GPIOB, GPIO_Pin_1)" style="width:260px">。</div>
+        <div class="exp sol" id="fe1"></div>
+        <button class="btn btn-ghost" style="margin-top:6px" onclick="checkFill(1,'GPIO_ReadInputDataBit')">检查</button>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:0">
+        <div class="q-text">3. 用按键（接 GND）控制 LED 时，按键按下读到 0，应判断 <code>GPIO_ReadInputDataBit(...) == <input class="fill-input" id="f2" placeholder="数字" style="width:60px"></code> 触发。</div>
+        <div class="exp sol" id="fe2"></div>
+        <button class="btn btn-ghost" style="margin-top:6px" onclick="checkFill(2,'0')">检查</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 简答题 ========== -->
+  <div class="q-card">
+    <div class="q-head"><span class="q-type t-short">简答</span><span class="q-text" style="margin:0">简答题（2 题 × 8 分）</span></div>
+    <div class="q-body">
+      <div class="q-card" style="border:none;margin-bottom:14px">
+        <div class="q-text">1. 用自己的话说：推挽输出和开漏输出有什么区别？各适合什么场景？</div>
+        <button class="btn btn-ghost" onclick="toggleSol('s0')">先自答，再看参考答案</button>
+        <div class="sol-box" id="s0"><b>参考答案</b>：推挽有上下两个开关，输出 0/1 都有强驱动，适合 LED/蜂鸣器等普通 IO；开漏只有下开关，输出 1 靠外部上拉电阻，适合 I2C 等需要多设备"线与"的总线场景。<br><b>评分要点</b>：结构区别（4 分）+ 场景（4 分）。</div>
+      </div>
+      <div class="q-card" style="border:none;margin-bottom:0">
+        <div class="q-text">2. 为什么机械按键需要消抖？软件上怎么处理？</div>
+        <button class="btn btn-ghost" onclick="toggleSol('s1')">先自答，再看参考答案</button>
+        <div class="sol-box" id="s1"><b>参考答案</b>：机械按键按下/松开的瞬间，触点会弹跳 5~20ms，电平在 0/1 间反复，不处理会被当成多次按键。软件方案：检测到按下后 <b>延时 20ms</b> 再确认，仍为按下才认定有效；配合"等待松手"防止长按连触发。<br><b>评分要点</b>：抖动原因（3 分）+ 消抖方法（3 分）+ 松手检测（2 分）。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-primary" onclick="gradeAll()">交卷并评分</button>
+  </div>
+  <div class="footer">第 3 节自测 · 江科大 STM32 入门教程 · 排序题可重做，选择题点选即判</div>
+</div>
+
+<script>
+/* ===== 排序题数据 ===== */
+const sortAns = {1:[0,2,3,1], 2:[0,1,2,3], 3:[0,1,2,3]};
+const sortScore = {1:0, 2:0, 3:0};
+const sortSeq = {1:[], 2:[], 3:[]};
+
+function initSort(n){
+  const pool = document.getElementById('pool'+n);
+  pool.querySelectorAll('.sort-chip').forEach(ch=>{
+    ch.classList.remove('picked');
+    ch.onclick = ()=>pickSort(n, +ch.dataset.id);
+  });
+  document.getElementById('seq'+n).innerHTML = '';
+  document.getElementById('msg'+n).textContent = '';
+  document.getElementById('msg'+n).className = 'sort-msg';
+  sortSeq[n] = [];
+  sortScore[n] = 0;
+}
+function pickSort(n, id){
+  if(sortSeq[n].includes(id)) return;
+  sortSeq[n].push(id);
+  renderSeq(n);
+  const pool = document.getElementById('pool'+n);
+  pool.querySelectorAll('.sort-chip').forEach(ch=>{
+    if(+ch.dataset.id === id) ch.classList.add('picked');
+  });
+}
+function renderSeq(n){
+  const box = document.getElementById('seq'+n);
+  box.innerHTML = '';
+  sortSeq[n].forEach((id,i)=>{
+    const d = document.createElement('div');
+    d.className = 'item';
+    const label = document.querySelector('#pool'+n).querySelector('[data-id="'+id+'"]').textContent;
+    d.innerHTML = '<span>'+(i+1)+'. '+label+'</span><span class="x" onclick="undoSort('+n+','+id+')">✕</span>';
+    box.appendChild(d);
+  });
+}
+function undoSort(n, id){
+  sortSeq[n] = sortSeq[n].filter(x=>x!==id);
+  const pool = document.getElementById('pool'+n);
+  pool.querySelectorAll('.sort-chip').forEach(ch=>{
+    if(+ch.dataset.id === id) ch.classList.remove('picked');
+  });
+  renderSeq(n);
+}
+function checkSort(n){
+  const msg = document.getElementById('msg'+n);
+  if(sortSeq[n].length !== sortAns[n].length){
+    msg.className = 'sort-msg no';
+    msg.textContent = '还没排完，共需 '+sortAns[n].length+' 步，当前 '+sortSeq[n].length+' 步';
+    return;
+  }
+  let ok = true;
+  sortSeq[n].forEach((id,i)=>{ if(id !== sortAns[n][i]) ok = false; });
+  if(ok){
+    sortScore[n] = 10;
+    msg.className = 'sort-msg ok';
+    msg.textContent = '✓ 顺序完全正确！+10 分';
+  } else {
+    // 最长正确前缀给一半分
+    let pref = 0;
+    while(pref < sortSeq[n].length && sortSeq[n][pref] === sortAns[n][pref]) pref++;
+    sortScore[n] = pref >= 2 ? 5 : 0;
+    msg.className = 'sort-msg no';
+    msg.textContent = '✗ 顺序不对（正确前缀 '+pref+' 步'+(pref>=2?', +5 分':'，不得分')+'）。正确顺序提示：'+sortAns[n].map(a=>{return document.querySelector('#pool'+n).querySelector('[data-id="'+a+'"]').textContent;}).join(' → ');
+  }
+  updateScore();
+}
+function resetSort(n){ initSort(n); updateScore(); }
+for(let n=1;n<=3;n++) initSort(n);
+
+/* ===== 选择/判断题 ===== */
+const choiceExp = {
+  0:{ok:'✓ 对！按键接 GND，不按时上拉读到 1，按下接地读到 0 → IPU + ==0。这是教程默认接法。',no:'✗ 错。按键接 GND = 低有效，要配 IPU（上拉输入），按下读到 0 触发。'},
+  1:{ok:'✓ 对！推挽 = 上下两个开关，输出 0/1 都有强驱动，LED/蜂鸣器首选。',no:'✗ 错。推挽输出 0 和 1 都有驱动能力；"只能拉低"是开漏输出的特点。'},
+  2:{ok:'✓ 对！PWM 是 TIM 外设控制引脚 → 复用推挽 AF_PP。',no:'✗ 错。引脚控制权交给片上外设（TIM）时用复用模式 AF_PP。普通推挽是 GPIO 自己输出。'},
+  3:{ok:'✓ 对！按键机械抖动约 5~20ms，软件延时 20ms 消抖是标准做法。',no:'✗ 错。抖动在毫秒级（5~20ms），所以延时 20ms 消抖；太短消不掉，1 秒太长影响响应。'},
+  4:{ok:'✓ 对！PA15(JTDI)、PB3(JTDO)、PB4(JNTRST) 复位后是 JTAG 引脚。PA13/PA14 是 SWD。',no:'✗ 错。JTAG 占用的是 PA15、PB3、PB4；PA13/PA14 是 SWD 调试口，本身可用。'},
+  5:{ok:'✓ 对！LED 阳极接 VCC、阴极接 GPIO，GPIO=0 时 VCC→LED→引脚→GND 有电流，灯亮。',no:'✗ 错。点亮需要电流流过 LED；输出 0 时引脚是"地"，电流才能从 VCC 经 LED 流到 GND。'},
+};
+const tfExp = {
+  0:{ok:'✓ 对！外设时钟默认关闭，必须先 RCC_APB2PeriphClockCmd 开启，否则寄存器写不进。',no:'✗ 错。这是 STM32 低功耗设计，外设时钟默认全关，必须开。'},
+  1:{ok:'✓ 对！浮空输入没有上下拉，悬空时电平不确定，读数会乱跳。',no:'✗ 错。浮空 = 引脚悬空，不按时读数随机乱跳，不是稳定 0。'},
+  2:{ok:'✓ 对！GPIO_Speed 是最大翻转速度，写 50MHz 兼容性最好，不用纠结。',no:'✗ 错。Speed 就是最大翻转速度（2/10/50MHz），写 50MHz 通常没错。'},
+  3:{ok:'✓ 对！开漏 + 外部上拉，多设备都能拉低信号线 → 线与，I2C 必须这样。',no:'✗ 错。这正是开漏用在 I2C 的原因：多个设备共线拉低不冲突。'},
+};
+
+let chosen = {};
+function bindChoice(containerId, expId, qKey, expMap){
+  const box = document.getElementById(containerId);
+  box.querySelectorAll('.opt').forEach(opt=>{
+    opt.onclick = ()=>{
+      if(opt.classList.contains('locked')) return;
+      box.querySelectorAll('.opt').forEach(o=>o.classList.add('locked'));
+      const ok = +opt.dataset.ok === 1;
+      opt.classList.add(ok?'correct':'wrong');
+      const exp = document.getElementById(expId);
+      exp.className = 'exp show '+(ok?'ok':'no');
+      exp.innerHTML = ok ? expMap.ok : expMap.no;
+      chosen[qKey] = ok;
+      updateScore();
+    };
+  });
+}
+bindChoice('c0','e0','c0',choiceExp[0]);
+bindChoice('c1','e1','c1',choiceExp[1]);
+bindChoice('c2','e2','c2',choiceExp[2]);
+bindChoice('c3','e3','c3',choiceExp[3]);
+bindChoice('c4','e4','c4',choiceExp[4]);
+bindChoice('c5','e5','c5',choiceExp[5]);
+bindChoice('t0','te0','t0',tfExp[0]);
+bindChoice('t1','te1','t1',tfExp[1]);
+bindChoice('t2','te2','t2',tfExp[2]);
+bindChoice('t3','te3','t3',tfExp[3]);
+
+/* ===== 填空 ===== */
+const fillScore = {f0:0, f1:0, f2:0};
+function checkFill(idx, ans){
+  const val = document.getElementById('f'+idx).value.trim();
+  const exp = document.getElementById('fe'+idx);
+  const ok = val.toLowerCase() === ans.toLowerCase();
+  fillScore['f'+idx] = ok ? 4 : 0;
+  exp.className = 'exp sol show';
+  exp.textContent = ok ? '✓ 正确！' : '✗ 不对，正确答案是：'+ans;
+  updateScore();
+}
+
+/* ===== 简答 ===== */
+function toggleSol(id){
+  document.getElementById(id).classList.toggle('show');
+}
+
+/* ===== 计分 ===== */
+function updateScore(){
+  let total = 0;
+  total += sortScore[1] + sortScore[2] + sortScore[3];
+  total += (chosen.c0?5:0)+(chosen.c1?5:0)+(chosen.c2?5:0)+(chosen.c3?5:0)+(chosen.c4?5:0)+(chosen.c5?5:0);
+  total += (chosen.t0?3:0)+(chosen.t1?3:0)+(chosen.t2?3:0)+(chosen.t3?3:0);
+  total += fillScore.f0 + fillScore.f1 + fillScore.f2;
+  document.getElementById('score').textContent = total;
+}
+function gradeAll(){
+  updateScore();
+  const s = document.getElementById('score').textContent;
+  let tip = '';
+  if(s >= 85) tip = ' 🎉 优秀！GPIO 掌握扎实';
+  else if(s >= 70) tip = ' 👍 良好，看看错题';
+  else if(s >= 55) tip = ' 📖 及格，回到知识点卡复习';
+  else tip = ' ⚠️ 薄弱，重点看电路动画第 1、3 块';
+  alert('总分：'+s+' / 100'+tip);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STM32 入门学习笔记（江科大 2023 版）</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#ffffff; --border:#e2e8f0;
+    --text:#1e293b; --muted:#64748b;
+    --blue:#2563eb; --blue-bg:#eff6ff;
+    --green:#059669; --green-bg:#ecfdf5;
+    --orange:#d97706; --orange-bg:#fffbeb;
+    --red:#dc2626; --red-bg:#fef2f2;
+    --purple:#7c3aed; --purple-bg:#f5f3ff;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.7;padding:24px 16px;}
+  .wrap{max-width:920px;margin:0 auto;}
+
+  .hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:28px 30px;margin-bottom:20px;}
+  .hero h1{font-size:26px;margin-bottom:6px;}
+  .hero .sub{opacity:.85;font-size:14px;}
+  .hero .tags{margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;}
+  .hero .tag{background:rgba(255,255,255,.18);padding:3px 12px;border-radius:20px;font-size:12px;}
+
+  .progress-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:20px;}
+  .progress-card .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .progress-card .label{font-weight:600;font-size:14px;}
+  .progress-card .val{font-size:13px;color:var(--muted);}
+  .bar{height:10px;background:var(--border);border-radius:6px;overflow:hidden;}
+  .bar>div{height:100%;width:26%;background:linear-gradient(90deg,#2563eb,#38bdf8);border-radius:6px;}
+
+  .chapter{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;}
+  .chapter-head{padding:14px 22px;background:var(--blue-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+  .chapter-head .num{background:var(--blue);color:#fff;width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;}
+  .chapter-head h2{font-size:17px;}
+  .chapter-head .ep{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+  .chapter-body{padding:18px 22px;}
+
+  h3.sec{font-size:15px;color:var(--blue);margin:16px 0 8px;}
+  h3.sec:first-child{margin-top:0;}
+  h4{font-size:14px;margin:12px 0 6px;color:var(--text);}
+  p{margin:6px 0;}
+  ul,ol{margin:6px 0 6px 22px;}
+  li{margin:3px 0;}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;}
+  th{background:var(--blue-bg);color:var(--blue);text-align:left;padding:8px 12px;border:1px solid var(--border);font-weight:600;}
+  td{padding:8px 12px;border:1px solid var(--border);}
+  tr:nth-child(even) td{background:#f8fafc;}
+
+  .note{border-radius:10px;padding:12px 16px;margin:10px 0;font-size:13.5px;border:1px solid transparent;}
+  .note.key{background:var(--blue-bg);border-color:#bfdbfe;color:#1e3a8a;}
+  .note.warn{background:var(--orange-bg);border-color:#fde68a;color:#92400e;}
+  .note.danger{background:var(--red-bg);border-color:#fecaca;color:#991b1b;}
+  .note.ok{background:var(--green-bg);border-color:#a7f3d0;color:#065f46;}
+  .note .t{font-weight:700;margin-right:6px;}
+
+  pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:14px 18px;overflow-x:auto;font-size:13px;line-height:1.6;margin:10px 0;}
+  code{font-family:"Consolas","Courier New",monospace;}
+  pre .c{color:#64748b;}
+  pre .k{color:#93c5fd;}
+  pre .f{color:#fbbf24;}
+  pre .n{color:#6ee7b7;}
+  pre .s{color:#fca5a5;}
+
+  .pit{display:flex;gap:12px;background:var(--red-bg);border:1px solid #fecaca;border-radius:12px;padding:14px 16px;margin:10px 0;}
+  .pit .icon{font-size:20px;flex-shrink:0;}
+  .pit b{color:#991b1b;}
+
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>STM32 入门学习笔记</h1>
+    <div class="sub">江科大《STM32入门教程-2023版 细致讲解 中文字幕》 · B站 BV1th411z7sn · 标准库开发</div>
+    <div class="tags">
+      <span class="tag">STM32F103C8T6 蓝板</span>
+      <span class="tag">Keil5</span>
+      <span class="tag">标准外设库</span>
+      <span class="tag">ST-Link / SWD</span>
+    </div>
+  </div>
+
+  <div class="progress-card">
+    <div class="row">
+      <span class="label">学习进度：第 6 章 TIM 定时器（全章完成，已到 6-8）</span>
+      <span class="val">P1 – P20 已学 · 下一步 7-1 ADC 模数转换器</span>
+    </div>
+    <div class="bar"><div style="width:67%"></div></div>
+  </div>
+
+  <!-- ==================== 第1章 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">1</div><h2>认识 STM32</h2><span class="ep">P1 · P2 [1-1][1-2]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">1. STM32 是什么</h3>
+      <p>ST（意法半导体）公司基于 <b>ARM Cortex-M</b> 内核的 32 位微控制器。型号很多，按内核分 M0 / M3 / M4 / M7 等，F103 是 <b>Cortex-M3</b> 内核，72MHz 主频，属于性价比最高的入门系列。</p>
+
+      <h3 class="sec">2. 命名规则（读懂型号）</h3>
+      <table>
+        <tr><th>STM32</th><th>F</th><th>103</th><th>C</th><th>8</th><th>T</th><th>6</th></tr>
+        <tr><td>系列</td><td>通用型</td><td>增强型</td><td>引脚数<br>C=48</td><td>Flash 容量<br>8=64KB</td><td>封装<br>T=LQFP</td><td>温度/版本</td></tr>
+      </table>
+      <p>常见芯片对应：<code>STM32F103C8T6</code>（48脚/64KB，最小系统板）· <code>STM32F103ZET6</code>（144脚/512KB）· <code>STM32F103RCT6</code>（64脚/256KB）。</p>
+
+      <h3 class="sec">3. 芯片内部结构（框架图要会画）</h3>
+      <ul>
+        <li><b>内核</b>：Cortex-M3 CPU + 中断控制器 NVIC + 调试接口 SWD/JTAG + 系统定时器 SysTick</li>
+        <li><b>存储</b>：Flash（程序）+ SRAM（数据）</li>
+        <li><b>总线</b>：AHB（高速总线，接内核/存储/DMA）+ APB1/APB2（外设总线，时钟不同，APB2 更快）</li>
+        <li><b>外设</b>：GPIO、USART、SPI、I2C、TIM、ADC、DMA、RTC、看门狗……</li>
+      </ul>
+      <div class="note key"><span class="t">记忆锚点</span>GPIO、USART1、TIM1 等挂在 <b>APB2</b>（72MHz）；USART2/3、TIM2~4 等挂 APB1（36MHz）。外设时钟必须先开，这是后面每个外设初始化第一步。</div>
+
+      <h3 class="sec">4. 最小系统板（蓝板的构成）</h3>
+      <ul>
+        <li><b>供电</b>：3.3V / 5V / GND，USB 口或外部供电</li>
+        <li><b>晶振</b>：8MHz 外部晶振（HSE）+ 32.768kHz（RTC 用）</li>
+        <li><b>复位</b>：NRST 按键复位</li>
+        <li><b>启动配置</b>：BOOT0 / BOOT1 跳线（决定从 Flash / 系统存储器 / SRAM 启动）</li>
+        <li><b>调试</b>：SWD 接口（SWDIO=PA13、SWCLK=PA14）</li>
+        <li><b>板载外设</b>：LED（蓝板通常 PC13）、按键（KEY）、USB 转串口等</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ==================== 第2章 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">2</div><h2>开发环境与工程搭建</h2><span class="ep">P3 · P4 [2-1][2-2]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">1. 需要的软件</h3>
+      <table>
+        <tr><th>软件</th><th>作用</th><th>备注</th></tr>
+        <tr><td>Keil MDK5</td><td>编写/编译/下载/调试</td><td>装完要注册（License）</td></tr>
+        <tr><td>STM32 固件库</td><td>标准外设库源码</td><td>STSW-STM32054，V3.5</td></tr>
+        <tr><td>ST-Link 驱动</td><td>识别调试器</td><td>Win10/11 一般自动装</td></tr>
+        <tr><td>CH340 驱动</td><td>USB 转串口（下载/串口调试）</td><td>用 USB 串口下载时需要</td></tr>
+      </table>
+
+      <h3 class="sec">2. 新建工程核心流程（标准库模板）</h3>
+      <ol>
+        <li>New Project → 选芯片 <code>STM32F103C8</code></li>
+        <li>添加启动文件 <code>startup_stm32f10x_md.s</code>（md = 中等容量，F103C8 用这个）</li>
+        <li>添加固件库源码：内核 <code>core_cm3.c</code> + 系统初始化 <code>system_stm32f10x.c</code> + 外设 <code>stm32f10x_gpio.c</code> 等（按需添加）</li>
+        <li>添加用户代码 <code>main.c</code></li>
+        <li>配置 <b>宏定义</b>：<code>USE_STDPERIPH_DRIVER</code>、<code>STM32F10X_MD</code>（告诉库函数"我用了标准库 + 芯片是中容量"）</li>
+        <li>配置 <b>头文件路径</b> Include Paths：Start / Library / User 等所有含 .h 的目录</li>
+        <li>配置调试器：Debug → ST-Link Debugger → Settings → <b>Port 选 SW</b></li>
+      </ol>
+      <div class="note key"><span class="t">工程目录分工</span><code>Start</code>=启动+内核 · <code>Library</code>=固件库 · <code>System</code>=延时等公共模块 · <code>Driver</code>=自写外设驱动（Led/Key/OLED…）· <code>User</code>=main.c 与中断函数。这个分层是后面所有例程的骨架。</div>
+
+      <h3 class="sec">3. 固件库的两层封装</h3>
+      <ul>
+        <li><b>寄存器层</b>：直接操作 <code>GPIOA-&gt;ODR</code> 这类寄存器，快但繁琐</li>
+        <li><b>库函数层</b>：<code>GPIO_Init()</code> 等函数封装寄存器操作，可读性好，<b>入门用这个</b></li>
+      </ul>
+      <div class="note warn"><span class="t">注意</span>Keil 默认使用 V5 编译器（你的工程就是 ARMCC V5.06）。新工程如果提示找不到编译器，去 Project → Manage → 选择 ARM Compiler V5。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 第3章 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">3</div><h2>GPIO —— 最基础的外设</h2><span class="ep">P5–P8 [3-1]~[3-4]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">3-1 GPIO 输出（理论）· P5</h3>
+      <p><b>GPIO</b> = 通用输入输出口。F103 有 GPIOA~GPIOE（大容量还有 F/G），每组 16 个引脚（PIN0~PIN15）。引脚既可以输出高低电平，也可以读外部电平。</p>
+
+      <h4>八种工作模式（重点记 4 种）</h4>
+      <table>
+        <tr><th>类别</th><th>模式</th><th>特点</th><th>典型用途</th></tr>
+        <tr><td rowspan="2">输入</td><td>上拉输入 IPU</td><td>内部上拉，默认高电平</td><td>按键（按下接地变低）</td></tr>
+        <tr><td>下拉输入 IPD</td><td>内部下拉，默认低电平</td><td>按键（按下接电源变高）</td></tr>
+        <tr><td rowspan="2">输出</td><td>推挽输出 PP</td><td>强驱动，输出 0/1 都有能力</td><td>LED、蜂鸣器等普通 IO</td></tr>
+        <tr><td>开漏输出 OD</td><td>只能拉低，拉高靠外部上拉</td><td>I2C、电平转换</td></tr>
+      </table>
+      <div class="note key"><span class="t">一句话</span>驱动 LED 用 <b>推挽输出</b>（GPIO_Mode_Out_PP），读按键用 <b>上拉输入</b>（GPIO_Mode_IPU）。浮空输入/模拟输入先了解即可。</div>
+
+      <h4>GPIO 输出库函数三板斧</h4>
+      <pre><code><span class="c">// 1. 开时钟：任何外设使用前必须先开对应总线时钟</span>
+<span class="k">void</span> <span class="f">Led_Init</span>(<span class="k">void</span>)
+{
+    <span class="f">RCC_APB2PeriphClockCmd</span>(RCC_APB2Periph_GPIOA, ENABLE);  <span class="c">// GPIOA 挂在 APB2</span>
+
+    <span class="c">// 2. 定义并填写结构体（三要素：引脚 / 模式 / 速度）</span>
+    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_4;      <span class="c">// 引脚</span>
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP; <span class="c">// 推挽输出</span>
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; <span class="c">// 翻转速度</span>
+
+    <span class="c">// 3. 初始化：把配置写进寄存器</span>
+    <span class="f">GPIO_Init</span>(GPIOA, &amp;GPIO_InitStructure);
+}
+
+<span class="c">// 输出电平三件套</span>
+<span class="f">GPIO_SetBits</span>(GPIOA, GPIO_Pin_4);      <span class="c">// 置高 → 灯灭（常见接法）</span>
+<span class="f">GPIO_ResetBits</span>(GPIOA, GPIO_Pin_4);    <span class="c">// 置低 → 灯亮</span>
+<span class="f">GPIO_WriteBit</span>(GPIOA, GPIO_Pin_4, Bit_SET);  <span class="c">// 按位写，效果同上</span></code></pre>
+
+      <h3 class="sec">3-2 LED 闪烁 · 流水灯 · 蜂鸣器（代码）· P6</h3>
+      <h4>LED 闪烁 = 电平翻转 + 延时</h4>
+      <pre><code><span class="k">while</span>(<span class="n">1</span>)
+{
+    <span class="f">GPIO_ResetBits</span>(GPIOA, GPIO_Pin_4);  <span class="c">// 亮</span>
+    <span class="f">Delay_ms</span>(<span class="n">500</span>);
+    <span class="f">GPIO_SetBits</span>(GPIOA, GPIO_Pin_4);    <span class="c">// 灭</span>
+    <span class="f">Delay_ms</span>(<span class="n">500</span>);
+}</code></pre>
+
+      <h4>流水灯 = 移位 + 取反（点亮后循环右移）</h4>
+      <pre><code><span class="k">unsigned</span> <span class="k">char</span> i;
+<span class="k">while</span>(<span class="n">1</span>)
+{
+    <span class="k">for</span>(i=<span class="n">0</span>; i&lt;<span class="n">8</span>; i++)
+    {
+        <span class="f">GPIO_Write</span>(GPIOA, ~(<span class="n">0x01</span> &lt;&lt; i));  <span class="c">// 每次只有第 i 位为 0 → 对应灯亮</span>
+        <span class="f">Delay_ms</span>(<span class="n">100</span>);
+    }
+}</code></pre>
+
+      <h4>蜂鸣器 = 有源蜂鸣器，IO 给高电平就响</h4>
+      <p>有源蜂鸣器内部自带振荡源，<b>直接给高电平就响</b>；无源的需要 PWM 方波驱动（后面 TIM 章节学）。初始化同样三要素，把引脚换成蜂鸣器那个脚即可。</p>
+
+      <div class="note ok"><span class="t">核心套路</span>一切 GPIO 输出的写法都是：<b>开时钟 → 配结构体 → GPIO_Init → SetBits/ResetBits 控制</b>。LED、蜂鸣器、继电器、数码管段码……全部同一套。</div>
+
+      <h3 class="sec">3-3 GPIO 输入 + 必备 C 知识（理论）· P7</h3>
+      <h4>按键输入原理</h4>
+      <ul>
+        <li>按键一端接 GPIO（如 PB3），一端接 <b>GND</b></li>
+        <li>GPIO 配置为 <b>上拉输入</b>：不按时读到高电平 1，按下接地读到低电平 0</li>
+        <li>用 <code>GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3)</code> 读取</li>
+      </ul>
+      <pre><code><span class="k">void</span> <span class="f">Key_Init</span>(<span class="k">void</span>)
+{
+    <span class="f">RCC_APB2PeriphClockCmd</span>(RCC_APB2Periph_GPIOB, ENABLE);
+    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IPU;   <span class="c">// 上拉输入</span>
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    <span class="f">GPIO_Init</span>(GPIOB, &amp;GPIO_InitStructure);
+}</code></pre>
+
+      <h4>消抖（必考概念）</h4>
+      <p>机械按键按下瞬间会有 10~20ms 的抖动，电平在 0/1 之间弹跳。软件方案：<b>检测到低电平 → 延时 20ms → 再确认还是低 → 才算按下</b>。</p>
+
+      <h4>库函数必备 C 语言知识</h4>
+      <table>
+        <tr><th>知识点</th><th>在工程里的体现</th></tr>
+        <tr><td>宏定义 <code>#define</code></td><td>配置参数、引脚定义</td></tr>
+        <tr><td>结构体 <code>typedef struct</code></td><td>GPIO_InitTypeDef 这类"配置包"</td></tr>
+        <tr><td>指针</td><td>GPIO_Init(GPIOA, &amp;结构体) 传地址</td></tr>
+        <tr><td>头文件保护 <code>#ifndef __XXX_H</code></td><td>防止重复包含</td></tr>
+        <tr><td>多文件模块</td><td>.c 写实现 + .h 声明，main 里 include .h</td></tr>
+      </table>
+      <div class="note key"><span class="t">记忆锚点</span>库函数风格：<code>GPIO_Init(GPIOx, &amp;结构体)</code> —— 第一个参数是外设基址（如 GPIOA），第二个是配置结构体指针。所有外设（USART/TIM/ADC…）初始化都是这个模式。</div>
+
+      <h3 class="sec">3-4 按键控制 LED · 光敏传感器（代码）· P8</h3>
+      <h4>按键扫描 = 消抖 + 松手检测（完整流程）</h4>
+      <pre><code><span class="k">unsigned</span> <span class="k">char</span> <span class="f">Key_Read</span>(<span class="k">void</span>)
+{
+    <span class="k">unsigned</span> <span class="k">char</span> temp = <span class="n">0x00</span>;
+    <span class="k">if</span>(<span class="f">GPIO_ReadInputDataBit</span>(GPIOB, GPIO_Pin_3) == <span class="n">0</span>)  <span class="c">// 检测到按下</span>
+    {
+        <span class="f">Delay_ms</span>(<span class="n">20</span>);                                       <span class="c">// 消抖</span>
+        <span class="k">while</span>(<span class="f">GPIO_ReadInputDataBit</span>(GPIOB, GPIO_Pin_3) == <span class="n">0</span>);  <span class="c">// 等待松手（防连按）</span>
+        <span class="f">Delay_ms</span>(<span class="n">20</span>);
+        temp = <span class="n">0x01</span>;                                       <span class="c">// 返回按键编号</span>
+    }
+    <span class="k">return</span> temp;
+}</code></pre>
+
+      <p>main 里的用法：</p>
+      <pre><code><span class="k">while</span>(<span class="n">1</span>)
+{
+    <span class="k">if</span>(<span class="f">Key_Read</span>() == <span class="n">0x01</span>)  <span class="f">GPIO_ResetBits</span>(GPIOA, GPIO_Pin_4);  <span class="c">// 按下 → 亮</span>
+    <span class="k">else</span>                       <span class="f">GPIO_SetBits</span>(GPIOA, GPIO_Pin_4);    <span class="c">// 松开 → 灭</span>
+}</code></pre>
+
+      <h4>光敏传感器控制蜂鸣器（同一套路换外设）</h4>
+      <ul>
+        <li>光敏模块输出数字电平（光强超过阈值输出高/低，板上有比较器）</li>
+        <li>GPIO 配成输入，读到对应电平 → 开/关蜂鸣器</li>
+        <li>和按键唯一的区别：<b>按键按一下要"松手检测"，传感器是持续电平，直接读即可</b></li>
+      </ul>
+
+      <div class="note ok"><span class="t">本章总结</span>输入输出都是同一流程：<b>开时钟 → 配结构体（模式决定输入/输出）→ GPIO_Init</b>。输入用 <code>GPIO_ReadInputDataBit</code> 读，输出用 <code>GPIO_SetBits/ResetBits</code> 写。这就是 GPIO 的全部。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 第4章 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">4</div><h2>OLED 显示屏 —— 调试利器</h2><span class="ep">P9 · P10 [4-1][4-2]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">1. 为什么先学 OLED（4-1 理论）</h3>
+      <ul>
+        <li>前面调试只能靠 LED 亮灭，信息量太小</li>
+        <li>OLED 能<b>实时显示数值/变量/波形</b>，是嵌入式开发的"printf"</li>
+        <li>后面的所有章节（编码器、ADC、串口…）都用 OLED 看结果</li>
+      </ul>
+
+      <h3 class="sec">2. OLED 模块基础</h3>
+      <ul>
+        <li>常见 0.96 寸，<b>SSD1306</b> 驱动芯片，128×64 像素，I2C 接口（SDA/SCL/电源/GND 四线）</li>
+        <li>江科大例程接法：<b>SDA→PB7、SCL→PB6</b>（F103 硬件 I2C1 引脚，但这里用软件模拟）</li>
+        <li>屏幕分 8 页（page0~7），每页 128 个字节，一字节对应一列 8 个像素（垂直方向 8 位）</li>
+        <li>显示字符/汉字本质是<b>查字模表</b>：OLED_Font.h 里存点阵数据</li>
+      </ul>
+
+      <h4>核心驱动函数（记住这套 API 即可用）</h4>
+      <table>
+        <tr><th>函数</th><th>作用</th></tr>
+        <tr><td><code>OLED_Init()</code></td><td>初始化（上电时序 + 配置命令 + 清屏）</td></tr>
+        <tr><td><code>OLED_Clear()</code></td><td>清屏</td></tr>
+        <tr><td><code>OLED_ShowChar(x, y, ch)</code></td><td>显示单个字符（x=列1~16，y=行1~4）</td></tr>
+        <tr><td><code>OLED_ShowString(x, y, str)</code></td><td>显示字符串</td></tr>
+        <tr><td><code>OLED_ShowNum(x, y, num, len)</code></td><td>显示数字（补零对齐）</td></tr>
+        <tr><td><code>OLED_ShowSignedNum(x, y, num, len)</code></td><td>显示有符号数</td></tr>
+        <tr><td><code>OLED_ShowHexNum(x, y, num, len)</code></td><td>显示十六进制</td></tr>
+      </table>
+
+      <h3 class="sec">3. 软件 I2C 通信要点（4-2 代码）</h3>
+      <ul>
+        <li><b>I2C 协议</b>：起始条件 → 设备地址+读写位 → 应答 → 数据字节 → 停止条件</li>
+        <li>SSD1306 地址：0x78（7位地址 0x3C 左移 1 位），写指令/数据用不同控制字节</li>
+        <li><b>软件模拟</b>：GPIO 翻转手动产生时钟时序，慢但灵活、引脚随意</li>
+        <li>OLED 驱动是标准库工程里第一个"多文件复杂驱动"，直接复制使用即可，重点是会用 API</li>
+      </ul>
+
+      <div class="note key"><span class="t">记忆锚点</span>OLED = 前面 GPIO（输出）+ 软件 I2C 协议（时序）+ 查表（字模）。它本身不难，但把"外设驱动"的套路完整走了一遍——以后接任何模块（温湿度、陀螺仪、Flash…）都是这个模式：<b>看时序图 → 写底层收发函数 → 封装应用函数</b>。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 第5章 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">5</div><h2>EXTI 外部中断</h2><span class="ep">P11 · P12 [5-1][5-2]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">1. 中断系统基础（5-1 理论）</h3>
+      <p>CPU 正在执行主程序时，外部/内部事件突然打断它，跳去执行一段<b>中断服务函数</b>，执行完再回来继续主程序。好处：不用 CPU 轮询等待，响应快、省电。</p>
+
+      <h4>相关概念（面试常问）</h4>
+      <table>
+        <tr><th>概念</th><th>含义</th></tr>
+        <tr><td>中断源</td><td>触发中断的事件（如引脚边沿、定时器溢出）</td></tr>
+        <tr><td>NVIC</td><td>嵌套向量中断控制器，管理所有中断的使能/优先级</td></tr>
+        <tr><td>EXTI</td><td>外部中断/事件控制器，把引脚信号转成中断请求</td></tr>
+        <tr><td>抢占优先级</td><td>高抢占可打断低抢占（Group 决定分组方式）</td></tr>
+        <tr><td>响应优先级</td><td>同抢占下按响应排序，不可打断（仅排队）</td></tr>
+        <tr><td>中断服务函数</td><td>ISR，名字固定（如 <code>EXTI0_IRQHandler</code>），写在启动文件里</td></tr>
+      </table>
+
+      <h4>NVIC 优先级分组（4 位分配抢占/响应）</h4>
+      <table>
+        <tr><th>分组</th><th>抢占优先级</th><th>响应优先级</th></tr>
+        <tr><td>Group 0</td><td>0 位（无）</td><td>4 位</td></tr>
+        <tr><td>Group 1</td><td>1 位</td><td>3 位</td></tr>
+        <tr><td>Group 2</td><td>2 位</td><td>2 位</td></tr>
+        <tr><td>Group 3</td><td>3 位</td><td>1 位</td></tr>
+        <tr><td>Group 4</td><td>4 位</td><td>0 位（无）</td></tr>
+      </table>
+      <p>例程常用 <b>Group 2</b>：抢占 0~3、响应 0~3。整工程只能调用一次分组配置。</p>
+
+      <h3 class="sec">2. EXTI 配置流程（标准套路）</h3>
+      <pre><code><span class="k">void</span> <span class="f">Encoder_Init</span>(<span class="k">void</span>)
+{
+    <span class="c">// ① 开 GPIO 时钟 + AFIO 时钟（EXTI 引脚映射必须！）</span>
+    <span class="f">RCC_APB2PeriphClockCmd</span>(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+
+    <span class="c">// ② 配置 GPIO 为输入（上拉）</span>
+    GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_0 | GPIO_Pin_1;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    <span class="f">GPIO_Init</span>(GPIOB, &amp;GPIO_InitStructure);
+
+    <span class="c">// ③ GPIO 引脚 → EXTI 线 映射（重映射功能，依赖 AFIO）</span>
+    <span class="f">GPIO_EXTILineConfig</span>(GPIO_PortSourceGPIOB, GPIO_PinSource0);
+    <span class="f">GPIO_EXTILineConfig</span>(GPIO_PortSourceGPIOB, GPIO_PinSource1);
+
+    <span class="c">// ④ 配置 EXTI 触发方式（下降沿/上升沿/双边沿）</span>
+    EXTI_InitTypeDef EXTI_InitStructure;
+    EXTI_InitStructure.EXTI_Line    = EXTI_Line0 | EXTI_Line1;
+    EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    <span class="f">EXTI_Init</span>(&amp;EXTI_InitStructure);
+
+    <span class="c">// ⑤ 配置 NVIC：使能对应中断线 + 优先级</span>
+    <span class="f">NVIC_PriorityGroupConfig</span>(NVIC_PriorityGroup_2);
+    NVIC_InitTypeDef NVIC_InitStructure;
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    <span class="f">NVIC_Init</span>(&amp;NVIC_InitStructure);
+}</code></pre>
+
+      <h4>中断服务函数模板（写在哪个 .c 里都行，名字必须对）</h4>
+      <pre><code><span class="k">void</span> <span class="f">EXTI0_IRQHandler</span>(<span class="k">void</span>)
+{
+    <span class="k">if</span>(<span class="f">EXTI_GetITStatus</span>(EXTI_Line0) == SET)   <span class="c">// 判断是否本中断线触发</span>
+    {
+        <span class="f">EXTI_ClearITPendingBit</span>(EXTI_Line0);     <span class="c">// 清中断标志（必须！否则一直进）</span>
+        <span class="c">// ... 处理逻辑 ...</span>
+    }
+}</code></pre>
+      <div class="note danger"><span class="t">铁律</span>中断服务函数里<b>一定要先判断标志、再清标志</b>，否则会反复触发死循环。函数名必须是启动文件里注册的名字（EXTI0_IRQHandler 等），拼错则中断静默失效——编译器不报错，最阴的坑。</div>
+
+      <h3 class="sec">3. 两个实战例程（5-2 代码）</h3>
+      <h4>对射式红外传感器计次</h4>
+      <ul>
+        <li>红外发射/接收对管：遮挡 → 输出电平变化 → EXTI 中断计数</li>
+        <li>就是"光敏/按键的 GPIO 输入 + EXTI 中断"组合：<b>电平变了进中断 +1</b></li>
+      </ul>
+      <h4>旋转编码器计次（正交编码器）</h4>
+      <ul>
+        <li>编码器输出 <b>A、B 两相</b>（相差 90°），旋转方向由相位关系决定</li>
+        <li>思路：A 相下降沿触发中断 → 在中断里<b>读 B 相电平</b>判断方向（B 高=正转，B 低=反转）</li>
+        <li>中断里 <code>encoder_count++ / --</code>，main 里读显示</li>
+        <li>EXTI 中断方式读编码器在快速旋转时<b>会丢脉冲</b>，后面 6-7 用 TIM 编码器接口硬件正交解码才是正解</li>
+      </ul>
+      <pre><code><span class="c">// main.c 里必须记得调用初始化！否则中断永不触发</span>
+<span class="k">int</span> <span class="f">main</span>(<span class="k">void</span>)
+{
+    <span class="f">OLED_Init</span>();
+    <span class="f">Encoder_Init</span>();                    <span class="c">// ← 漏了它，编码器永远 0</span>
+    <span class="f">OLED_ShowString</span>(<span class="n">1</span>,<span class="n">1</span>,<span class="s">"Count"</span>);
+    <span class="k">while</span>(<span class="n">1</span>)
+    {
+        <span class="f">OLED_ShowNum</span>(<span class="n">1</span>,<span class="n">7</span>,<span class="f">get_encoder</span>(),<span class="n">4</span>);
+    }
+}</code></pre>
+
+      <div class="note ok"><span class="t">本章总结</span>中断五步走：<b>① 开时钟(GPIO+AFIO) → ② 配 GPIO → ③ GPIO_EXTILineConfig 映射 → ④ EXTI_Init 配触发 → ⑤ NVIC 使能+优先级</b>。服务函数里<b>先判标志、后清标志</b>。EXTI 让 CPU 从"轮询等待"变成"事件驱动"，这是后面定时器/串口/DMA 所有中断的基础。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 第6章 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">6</div><h2>TIM 定时器</h2><span class="ep">P13 · P14 [6-1][6-2]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">1. 定时器是什么（6-1 理论）</h3>
+      <ul>
+        <li>定时器 = 硬件计数器：内部时钟每过一个周期 <b>CNT++</b>，溢出时产生<b>更新中断</b>，让 CPU 定时做某事</li>
+        <li>比软件 Delay 好：<b>不占用 CPU</b>（Delay 期间 CPU 死等，定时器期间 CPU 干别的）</li>
+        <li>F103 有：<b>TIM1/TIM8</b>（高级定时器）、<b>TIM2~5</b>（通用）、<b>TIM6/7</b>（基本）。我们学 TIM2~4</li>
+      </ul>
+
+      <h4>定时器组成框图（必会画）</h4>
+      <pre>时钟源 ──► 预分频器PSC ──► 计数器CNT ──► 自动重装值ARR ──► 更新事件/中断
+(72MHz)   (分频后)     (加1/减1)   (溢出条件)</pre>
+      <ul>
+        <li><b>PSC 预分频器</b>：把 72MHz 分频，降低计数频率 → 决定计数周期</li>
+        <li><b>CNT 计数器</b>：每来一个脉冲 +1</li>
+        <li><b>ARR 自动重装载</b>：CNT 数到 ARR 就溢出清零，产生更新中断</li>
+      </ul>
+      <div class="note key"><span class="t">溢出时间公式（必背）</span>溢出时间 = (ARR+1) × (PSC+1) / 72MHz。<br>
+      例：ARR=10000-1、PSC=7200-1 → (10000 × 7200) / 72M = <b>1 秒</b>。<br>
+      常用套路：先定 PSC 让计数频率为 1MHz（PSC=71 → 1µs 一个脉冲），ARR 直接就是微秒数。</div>
+
+      <h3 class="sec">2. 定时中断配置流程（6-2 代码）</h3>
+      <pre><code><span class="k">void</span> <span class="f">Timer_Init</span>(<span class="k">void</span>)
+{
+    <span class="c">// ① 开时钟：TIM2 在 APB1 总线上（注意是 APB1！）</span>
+    <span class="f">RCC_APB1PeriphClockCmd</span>(RCC_APB1Periph_TIM2, ENABLE);
+
+    <span class="c">// ② 选择时钟源（内部 72MHz 时钟）</span>
+    <span class="f">TIM_InternalClockConfig</span>(TIM2);
+
+    <span class="c">// ③ 配置时基单元：分频 / 计数模式 / 重装值</span>
+    TIM_TimeBaseInitTypeDef TimeBaseInitStructure;
+    TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    TimeBaseInitStructure.TIM_CounterMode   = TIM_CounterMode_Up;   <span class="c">// 向上计数</span>
+    TimeBaseInitStructure.TIM_Period        = <span class="n">10000</span> - <span class="n">1</span>;        <span class="c">// ARR：重装值</span>
+    TimeBaseInitStructure.TIM_Prescaler     = <span class="n">7200</span> - <span class="n">1</span>;        <span class="c">// PSC：预分频</span>
+    TimeBaseInitStructure.TIM_RepetitionCounter = <span class="n">0</span>;             <span class="c">// 高级定时器用，通用填0</span>
+    <span class="f">TIM_TimeBaseInit</span>(TIM2, &amp;TimeBaseInitStructure);
+
+    <span class="c">// ④ 清标志 + 使能更新中断（NVIC 需要）</span>
+    <span class="f">TIM_ClearFlag</span>(TIM2, TIM_FLAG_Update);
+    <span class="f">TIM_ITConfig</span>(TIM2, TIM_IT_Update, ENABLE);
+
+    <span class="c">// ⑤ NVIC 使能中断</span>
+    <span class="f">NVIC_PriorityGroupConfig</span>(NVIC_PriorityGroup_2);
+    NVIC_InitTypeDef NVIC_InitStructure;
+    NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = <span class="n">2</span>;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = <span class="n">1</span>;
+    <span class="f">NVIC_Init</span>(&amp;NVIC_InitStructure);
+
+    <span class="c">// ⑥ 启动定时器！（忘了它定时器不跑）</span>
+    <span class="f">TIM_Cmd</span>(TIM2, ENABLE);
+}
+
+<span class="c">// 中断服务函数：每秒 Num++</span>
+<span class="k">void</span> <span class="f">TIM2_IRQHandler</span>(<span class="k">void</span>)
+{
+    <span class="k">if</span>(<span class="f">TIM_GetITStatus</span>(TIM2, TIM_IT_Update) == SET)
+    {
+        <span class="f">TIM_ClearITPendingBit</span>(TIM2, TIM_IT_Update);   <span class="c">// 先清标志</span>
+        Num++;
+    }
+}</code></pre>
+
+      <h3 class="sec">3. 两个容易漏的坑（我踩过）</h3>
+      <table>
+        <tr><th>坑</th><th>后果</th><th>解法</th></tr>
+        <tr><td>时钟开错总线（TIM2 写成 APB2）</td><td>寄存器写不进去，定时器不工作</td><td>TIM2~4 用 <code>RCC_APB1PeriphClockCmd</code>；TIM1/8 才是 APB2</td></tr>
+        <tr><td>忘了 <code>TIM_Cmd(TIM2, ENABLE)</code></td><td>配置全对但定时器不跑</td><td>初始化最后必须启动定时器</td></tr>
+        <tr><td>忘了 main 里调用 <code>Timer_Init()</code></td><td>Num 永远 0</td><td>所有外设初始化都要在 main 里调用</td></tr>
+      </table>
+
+      <div class="note ok"><span class="t">本章总结</span>定时器定时中断 = <b>开时钟(APB1) → 选时钟源 → 配 PSC/ARR → 使能更新中断 → NVIC → TIM_Cmd 启动</b>。核心是记住溢出时间公式：<b>溢出时间 = (ARR+1)×(PSC+1)/72MHz</b>。TIM 是 F103 最复杂的外设，后面 PWM（输出比较）、输入捕获、编码器接口都是基于这个时基单元扩展的。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 第6章补充：PWM ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">6</div><h2>TIM 输出比较 —— PWM 驱动（呼吸灯/舵机）</h2><span class="ep">P15 · P16 [6-3][6-4]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">1. PWM 是什么（6-3 理论）</h3>
+      <ul>
+        <li><b>PWM</b>（脉宽调制）：固定频率的方波，通过调节<b>占空比</b>（高电平时间占比）传递信息</li>
+        <li>应用：LED 亮度（呼吸灯）、舵机角度、电机转速、蜂鸣器音调——本质都是"占空比控制"</li>
+        <li><b>输出比较单元</b>：CNT 与 CCR（比较寄存器）比较，CNT&lt;CCR 输出高、CNT&gt;=CCR 输出低 → 自动产生 PWM，全程不占 CPU</li>
+      </ul>
+      <div class="note key"><span class="t">记忆锚点</span>PWM 频率 = ARR 决定（1/周期），占空比 = CCR 决定（CCR/ARR）。改 CCR 就能连续调亮度/角度/转速。</div>
+
+      <h3 class="sec">2. PWM 配置（6-3 代码，呼吸灯）</h3>
+      <pre><code><span class="c">// 复用推挽输出：把 TIM 通道信号引到 GPIO 引脚</span>
+GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;    <span class="c">// ← 注意是复用推挽，不是普通推挽</span>
+GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_1;          <span class="c">// PA1 = TIM2_CH2</span>
+<span class="f">GPIO_Init</span>(GPIOA, &amp;GPIO_InitStructure);
+
+<span class="c">// 时基：ARR=100，PSC=720 → PWM 频率 = 72M/(720×100) = 1kHz</span>
+<span class="f">TIM_TimeBaseInit</span>(TIM2, &amp;TimeBaseInitStructure);
+
+<span class="c">// 输出比较通道配置（核心四要素）</span>
+TIM_OCInitTypeDef OCInitStructure;
+<span class="f">TIM_OCStructInit</span>(&amp;OCInitStructure);                 <span class="c">// 先填默认值，防遗漏字段</span>
+OCInitStructure.TIM_OCMode      = TIM_OCMode_PWM1;     <span class="c">// PWM 模式1：CNT&lt;CCR 输出有效电平</span>
+OCInitStructure.TIM_OCPolarity  = TIM_OCPolarity_High; <span class="c">// 输出极性：高电平有效</span>
+OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+OCInitStructure.TIM_Pulse       = <span class="n">0</span>;                  <span class="c">// CCR 初始值</span>
+<span class="f">TIM_OC2Init</span>(TIM2, &amp;OCInitStructure);               <span class="c">// 通道2 → 对应 PA1</span>
+
+<span class="c">// 启动定时器</span>
+<span class="f">TIM_Cmd</span>(TIM2, ENABLE);
+
+<span class="c">// 运行时改占空比：i 从 0→100 循环 → 呼吸灯</span>
+<span class="f">PWM_SetCompare2</span>(i);    <span class="c">// 内部就是 TIM_SetCompare2(TIM2, i)</span></code></pre>
+
+      <h3 class="sec">3. 舵机驱动（6-4 代码）</h3>
+      <ul>
+        <li>舵机（SG90 等）：<b>20ms 周期</b> PWM，脉宽 0.5ms~2.5ms 对应 0°~180°</li>
+        <li>配置：PSC=72-1（1MHz 计数）、ARR=20000-1（20ms 周期）→ CCR=500/1000/1500/2000 对应 0°~135°</li>
+        <li>接线：<b>红=5V、棕/黑=GND、橙/黄=信号线</b>（接 PA1）</li>
+        <li><b>舵机必须独立 5V 供电</b>，GND 与板子共地——STLink 的 3.3V 带不动</li>
+      </ul>
+      <pre><code><span class="c">// 舵机角度切换（配按键循环换档）</span>
+<span class="k">void</span> <span class="f">Servo_control</span>(<span class="k">unsigned</span> <span class="k">char</span> state)
+{
+    <span class="k">switch</span>(state)
+    {
+        <span class="k">case</span> <span class="n">0</span>: <span class="f">PWM_SetCompare2</span>(<span class="n">500</span>);   <span class="k">break</span>;   <span class="c">// ≈0°</span>
+        <span class="k">case</span> <span class="n">1</span>: <span class="f">PWM_SetCompare2</span>(<span class="n">1000</span>);  <span class="k">break</span>;   <span class="c">// ≈45°</span>
+        <span class="k">case</span> <span class="n">2</span>: <span class="f">PWM_SetCompare2</span>(<span class="n">1500</span>);  <span class="k">break</span>;   <span class="c">// ≈90°</span>
+        <span class="k">case</span> <span class="n">3</span>: <span class="f">PWM_SetCompare2</span>(<span class="n">2000</span>);  <span class="k">break</span>;   <span class="c">// ≈135°</span>
+        <span class="k">default</span>: <span class="k">break</span>;
+    }
+}</code></pre>
+      <div class="note danger"><span class="t">switch 铁律</span>每个 case 必须 <code>break</code>！漏了会"穿透"（fall-through），state=0 时会一路执行到 case 3，舵机永远停在最后的角度——这是我踩过的坑。</div>
+
+      <div class="note ok"><span class="t">本章总结</span>PWM 输出比较四要素：<b>① GPIO 复用推挽 → ② 时基（PSC/ARR 定频率）→ ③ OC 配置（模式/极性/通道）→ ④ 改 CCR 定占空比</b>。一个 PWM 外设能驱动 LED/舵机/电机/蜂鸣器，是嵌入式控制的核心基本功。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 第6章补充：输入捕获 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">6</div><h2>TIM 输入捕获 —— 测频率与占空比</h2><span class="ep">P17 · P18 [6-5][6-6]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">1. 输入捕获原理（6-5 理论）</h3>
+      <ul>
+        <li>外部方波信号从 <b>TIMx_CHy 引脚</b>进入，引脚边沿触发时<b>把当前 CNT 值"拍照"存进 CCR</b>（捕获）</li>
+        <li>相邻两次捕获的 CNT 差值 = 信号周期 → <b>频率 = 时钟/差值</b></li>
+        <li>配合<b>从模式（Reset）</b>：捕获到上升沿自动清零 CNT，硬件自动连续测周期，CPU 只读结果</li>
+      </ul>
+      <div class="note key"><span class="t">记忆锚点</span>输出比较是"定时器往引脚输出"，输入捕获是"引脚往定时器输入"。测频率公式：<b>Freq = 计数频率 / CCR1</b>（CCR1 = 一个周期内的计数个数）。</div>
+
+      <h3 class="sec">2. 输入捕获配置（6-6 代码）</h3>
+      <pre><code><span class="k">void</span> <span class="f">IC_Init</span>(<span class="k">void</span>)
+{
+    <span class="c">// ① 引脚：PA6 = TIM3_CH1，配成输入（浮空/上拉均可）</span>
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_6;
+    <span class="f">GPIO_Init</span>(GPIOA, &amp;GPIO_InitStructure);
+
+    <span class="c">// ② 时基：PSC=71（1MHz 计数）、ARR 拉满防溢出</span>
+    <span class="f">TIM_TimeBaseInit</span>(TIM3, &amp;TimeBaseInitStructure);
+
+    <span class="c">// ③ 输入捕获配置：通道1、上升沿、直连</span>
+    TIM_ICInitTypeDef ICInitStructure;
+    ICInitStructure.TIM_Channel       = TIM_Channel_1;
+    ICInitStructure.TIM_ICFilter      = <span class="n">0xF</span>;                <span class="c">// 滤波抗抖动</span>
+    ICInitStructure.TIM_ICPolarity    = TIM_ICPolarity_Rising;
+    ICInitStructure.TIM_ICPrescaler   = TIM_ICPSC_DIV1;
+    ICInitStructure.TIM_ICSelection   = TIM_ICSelection_DirectTI;
+    <span class="f">TIM_PWMIConfig</span>(TIM3, &amp;ICInitStructure);   <span class="c">// PWM输入模式：自动配好两路捕获</span>
+
+    <span class="c">// ④ 从模式：TI1 上升沿触发 → 自动清零 CNT（测周期）</span>
+    <span class="f">TIM_SelectInputTrigger</span>(TIM3, TIM_TS_TI1FP1);
+    <span class="f">TIM_SelectSlaveMode</span>(TIM3, TIM_SlaveMode_Reset);
+
+    <span class="f">TIM_Cmd</span>(TIM3, ENABLE);
+}
+
+<span class="c">// ⑤ 读结果（main 里轮询显示）</span>
+uint32_t <span class="f">IC_GetFreq</span>(<span class="k">void</span>)
+{
+    <span class="k">return</span> <span class="n">1000000</span> / <span class="f">TIM_GetCapture1</span>(TIM3);   <span class="c">// 1MHz ÷ 周期计数 = 频率(Hz)</span>
+}
+uint32_t <span class="f">IC_GetDuty</span>(<span class="k">void</span>)
+{
+    <span class="k">return</span> (<span class="f">TIM_GetCapture2</span>(TIM3)+<span class="n">1</span>) * <span class="n">100</span> / (<span class="f">TIM_GetCapture1</span>(TIM3)+<span class="n">1</span>);  <span class="c">// 占空比%</span>
+}</code></pre>
+
+      <h3 class="sec">3. 测试方案（PWM 自产自测）</h3>
+      <ul>
+        <li>用一个 TIM 的 PWM 输出（如 PA0/PA1）当信号源，接到输入捕获引脚（PA6）</li>
+        <li>调 PWM 预分频改变频率，OLED 上实时看测出的频率/占空比是否一致</li>
+        <li>这验证了"输出比较 + 输入捕获"的闭环，也为后面 DMA、ADC 打了基础</li>
+      </ul>
+
+      <div class="note ok"><span class="t">本章总结</span>输入捕获 = <b>引脚边沿 → 存 CNT → 差值算周期 → 从模式自动清零</b>。测频率用 CCR1，测占空比再开一路捕获（PWMI 模式）。这是"定时器测量外设"的入口，面试常问"如何测频率"就答这套。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 第6章补充：编码器接口 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">6</div><h2>TIM 编码器接口 —— 硬件正交解码</h2><span class="ep">P19 · P20 [6-7][6-8]</span></div>
+    <div class="chapter-body">
+
+      <h3 class="sec">1. 为什么用硬件解码（6-7 理论）</h3>
+      <ul>
+        <li>旋转编码器输出 <b>A、B 两相</b>（相位差 90°），转动方向和相位关系一一对应</li>
+        <li>之前 5-2 用 <b>EXTI 软件方案</b>：A 相中断里读 B 相判方向 → 快速旋转<b>会丢脉冲</b>、还占 CPU</li>
+        <li><b>TIM 编码器接口</b>：硬件同时监视 A/B 两相，自动判断方向并<b>加减计数</b>，CPU 只读 CNT，不丢脉冲</li>
+      </ul>
+      <div class="note key"><span class="t">记忆锚点</span>编码器接口 = 输入捕获 × 2（A、B 两路）+ 硬件判向计数。CNT 就是位置计数器，正转加、反转减，方向由硬件自动判断。</div>
+
+      <h3 class="sec">2. 编码器接口配置（6-8 代码）</h3>
+      <pre><code><span class="k">void</span> <span class="f">Encoder_Init</span>(<span class="k">void</span>)
+{
+    <span class="c">// ① 引脚：PA6=CH1、PA7=CH2，上拉输入（编码器信号默认高）</span>
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_6 | GPIO_Pin_7;
+    <span class="f">GPIO_Init</span>(GPIOA, &amp;GPIO_InitStructure);
+
+    <span class="c">// ② 时基：ARR 拉满（65535）、PSC=0（不分频），让 CNT 尽量大范围</span>
+    <span class="f">TIM_TimeBaseInit</span>(TIM3, &amp;TimeBaseInitStructure);
+
+    <span class="c">// ③ 两路输入捕获（A→CH1、B→CH2），滤波防抖</span>
+    TIM_ICInitStructure.TIM_Channel = TIM_Channel_1;   <span class="c">// 滤波 0xF</span>
+    <span class="f">TIM_ICInit</span>(TIM3, &amp;TIM_ICInitStructure);
+    TIM_ICInitStructure.TIM_Channel = TIM_Channel_2;
+    <span class="f">TIM_ICInit</span>(TIM3, &amp;TIM_ICInitStructure);
+
+    <span class="c">// ④ 编码器接口：TI1+TI2 双沿都计数（4 倍频）</span>
+    <span class="f">TIM_EncoderInterfaceConfig</span>(TIM3, TIM_EncoderMode_TI12,
+                               TIM_ICPolarity_Rising, TIM_ICPolarity_Rising);
+    <span class="f">TIM_Cmd</span>(TIM3, ENABLE);
+}
+
+<span class="c">// ⑤ 读位置并清零（周期采样）</span>
+int16_t <span class="f">Encoder_Get</span>(<span class="k">void</span>)
+{
+    int16_t Temp = <span class="f">TIM_GetCounter</span>(TIM3);
+    <span class="f">TIM_SetCounter</span>(TIM3, <span class="n">0</span>);   <span class="c">// 读后清零，下次从 0 开始计</span>
+    <span class="k">return</span> Temp;                 <span class="c">// 返回本次转动量（带符号）</span>
+}</code></pre>
+
+      <h3 class="sec">3. 对比记忆：软件 vs 硬件方案</h3>
+      <table>
+        <tr><th>方案</th><th>实现</th><th>优点</th><th>缺点</th></tr>
+        <tr><td>EXTI 软件（5-2）</td><td>中断里读另一相判向</td><td>简单、引脚灵活</td><td>快速旋转丢脉冲、占 CPU</td></tr>
+        <tr><td>TIM 编码器接口（6-8）</td><td>硬件正交解码计数</td><td>不丢脉冲、不占 CPU</td><td>只能用特定引脚（CH1/CH2）</td></tr>
+      </table>
+
+      <div class="note ok"><span class="t">本章总结</span>编码器接口 = <b>双通道输入捕获 + 硬件判向 + CNT 加减计数</b>。读 CNT 前先清零得到"本次转动量"。至此 TIM 四大功能全部学完：<b>定时中断（时基）、输出比较（PWM）、输入捕获（测频）、编码器接口（正交解码）</b>——它们共用同一个时基单元，只是"捕获/比较通道"的用法不同。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 避坑 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">!</div><h2>实战踩坑记录（亲身经历）</h2><span class="ep">调试经验</span></div>
+    <div class="chapter-body">
+
+      <div class="pit">
+        <div class="icon">⚠️</div>
+        <div><b>ST-Link 提示 "No target connected"</b><br>
+        ST-Link 驱动正常但读不到芯片 → 先查<b>接线</b>：SWDIO→PA13、SWCLK→PA14、GND→GND，板子要<b>单独供电</b>。Settings 里 <code>Clock Selected: 0 MHz</code> 就是没通信上。<br>
+        <i>我这次的坑：杜邦线接错了引脚，换对后立刻识别。</i></div>
+      </div>
+
+      <div class="pit">
+        <div class="icon">⚠️</div>
+        <div><b>PB3 / PB4 按键失灵</b><br>
+        F103 里 <b>PA15、PB3、PB4 默认被 JTAG 占用</b>，不能当普通 GPIO 用！按键若用 PB3/PB4，必须在初始化前关闭 JTAG：<br>
+        <code>RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);</code><br>
+        <code>GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);</code><br>
+        只关 JTAG 不影响 SWD 下载。症状：按键按了没反应，甚至程序卡死。</div>
+      </div>
+
+      <div class="pit">
+        <div class="icon">⚠️</div>
+        <div><b>编译报 cannot open source input file "Led.c"</b><br>
+        文件删了/没放进工程目录，但工程树里还挂着引用。规律：<b>磁盘要有文件 + 工程树要添加 + 头文件路径要配</b>，三步缺一不可。</div>
+      </div>
+
+      <div class="pit">
+        <div class="icon">⚠️</div>
+        <div><b>旋转编码器不管用 / 计数一直为 0</b><br>
+        我踩过的双重坑：<b>① main 里忘了调 <code>Encoder_Init()</code></b>，EXTI/NVIC 全没配置；<b>② <code>GPIO_EXTILineConfig</code> 映射没开 AFIO 时钟</b>（<code>RCC_APB2PeriphClockCmd(..., RCC_APB2Periph_AFIO, ENABLE)</code>）。两个都是"中断静默失效"的典型，编译不报错、程序不崩溃，就是没反应。<br>
+        规律：<b>凡是用了 GPIO_EXTILineConfig / 引脚重映射，必须开 AFIO 时钟</b>。</div>
+      </div>
+
+      <div class="pit">
+        <div class="icon">⚠️</div>
+        <div><b>舵机工程按键没反应，排查半天竟是面包板虚接</b><br>
+        症状：按键按下，探测引脚电平<b>纹丝不动</b>（IPU 下一直 1、IPD 下一直 0）→ 说明按键根本没把引脚拉低/拉高。<br>
+        软件配置来回改了 N 轮（IPD/IPU 都试过）都是对的，最后发现是<b>面包板接触不良</b>，换跳线后立刻正常。<br>
+        教训：<b>探测值固定不变时，先用跳线短接引脚测硬件，别继续改软件</b>。面包板虚接是嵌入式调试的头号隐藏刺客。</div>
+      </div>
+
+      <div class="pit">
+        <div class="icon">⚠️</div>
+        <div><b>Servo.h 拼写错误（Sevro.h）+ switch 缺 break</b><br>
+        ① 头文件 <code>Sevro.h</code> 写反字母，代码 include <code>Servo.h</code> → 编译报 cannot open；<br>
+        ② Servo.c 的 switch 每个 case 漏 <code>break</code> → fall-through 穿透，state=0 会一路执行到最后一个 case，舵机永远停在最后角度。<br>
+        两个都是"症状与代码分离"的坑：编译错找文件，行为错找逻辑。</div>
+      </div>
+
+      <div class="pit">
+        <div class="icon">💡</div>
+        <div><b>warning #1-D: last line of file ends without a newline</b><br>
+        无害警告，文件末尾加个空行即可。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 下一步 ==================== -->
+  <div class="chapter">
+    <div class="chapter-head"><div class="num">→</div><h2>下一步</h2><span class="ep">7-1 ADC 模数转换器</span></div>
+    <div class="chapter-body">
+      <p>第 6 章 TIM 全部学完。下一章学 <b>ADC 模数转换器（7 章）</b>：把模拟电压（电位器/光敏/温度）转成数字量，配合 OLED 实时显示。之后是 DMA（8 章，ADC+多通道高速搬运）、USART 串口（9 章，通信）。</p>
+      <div class="note key"><span class="t">学习路线</span>GPIO → OLED → EXTI 中断 → TIM 定时器全套（中断/PWM/输入捕获/编码器，第 6 章完成）→ ADC 采样 → DMA → 串口 USART。这条主线走完，标准库开发基本毕业。</div>
+    </div>
+  </div>
+
+  <div class="footer">学习笔记 · 持续更新 · 江科大 STM32 入门教程（标准库）</div>
+</div>
+</body>
+</html>

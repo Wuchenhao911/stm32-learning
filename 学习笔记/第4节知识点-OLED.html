@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 4 节 交互式知识点 · OLED 显示屏（江科大 P9-P10）</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --border:#e2e8f0;
+    --text:#1e293b; --muted:#64748b;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --green:#059669; --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --orange:#d97706; --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --red:#dc2626; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.8;padding:24px 16px;}
+  .wrap{max-width:960px;margin:0 auto;}
+
+  .hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:24px 28px;margin-bottom:20px;}
+  .hero h1{font-size:24px;margin-bottom:4px;}
+  .hero .sub{opacity:.9;font-size:13px;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;}
+  .card-head{padding:12px 22px;background:var(--blue-bg);border-bottom:1px solid var(--border);font-weight:600;color:var(--blue);font-size:15px;display:flex;align-items:center;gap:10px;}
+  .card-head .num{background:var(--blue);color:#fff;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .card-body{padding:18px 22px;}
+
+  p{margin:5px 0;}
+  ul,ol{margin:6px 0 6px 22px;}
+  li{margin:3px 0;}
+  h4{margin:12px 0 4px;font-size:14px;}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;}
+  th{background:var(--blue-bg);color:var(--blue);text-align:left;padding:8px 12px;border:1px solid var(--border);font-weight:600;}
+  td{padding:8px 12px;border:1px solid var(--border);}
+  tr:nth-child(even) td{background:#f8fafc;}
+
+  pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:14px 18px;overflow-x:auto;font-size:13px;line-height:1.7;margin:10px 0;}
+  code{font-family:"Consolas","Courier New",monospace;}
+
+  .note{border-radius:10px;padding:10px 14px;margin:10px 0;font-size:13.5px;border:1px solid transparent;}
+  .note.key{background:var(--blue-bg);border-color:var(--blue-bd);color:#1e3a8a;}
+  .note.warn{background:var(--orange-bg);border-color:var(--orange-bd);color:#92400e;}
+  .note.danger{background:var(--red-bg);border-color:var(--red-bd);color:#991b1b;}
+  .note.ok{background:var(--green-bg);border-color:var(--green-bd);color:#065f46;}
+  .note .t{font-weight:700;margin-right:6px;}
+
+  .ctl{display:flex;gap:10px;justify-content:center;margin:12px 0;flex-wrap:wrap;}
+  .btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#1d4ed8;}
+  .btn-ghost{background:#eef2f7;color:var(--text);}
+  .btn-ghost:hover{background:#e2e8f0;}
+  .btn-green{background:#059669;color:#fff;}
+  .btn-green:hover{background:#047857;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  .status{text-align:center;font-size:13.5px;margin-top:8px;min-height:24px;}
+
+  /* I2C 时序 */
+  .i2c-wrap{display:flex;justify-content:center;margin:10px 0;}
+  .i2c-log{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12.5px;font-family:Consolas,monospace;min-height:60px;margin-top:8px;color:var(--text);}
+
+  /* 模拟 OLED */
+  .oled-screen{width:260px;height:130px;background:#0a0f1e;border-radius:10px;margin:0 auto;position:relative;box-shadow:inset 0 0 24px rgba(56,189,248,.15);overflow:hidden;}
+  .oled-screen canvas{display:block;width:100%;height:100%;}
+  .oled-frame{width:300px;margin:12px auto;padding:12px;background:linear-gradient(145deg,#e2e8f0,#cbd5e1);border-radius:14px;}
+  .oled-frame .pin{font-size:11px;color:var(--muted);text-align:center;margin-top:6px;}
+  .oled-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0;}
+  .oled-btns .btn{font-size:13px;padding:6px 12px;}
+  .oled-in{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
+  .oled-in input{padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;width:180px;}
+  .oled-in input:focus{outline:none;border-color:var(--blue);}
+
+  /* 字模演示 */
+  .font-grid{display:grid;grid-template-columns:repeat(8,26px);gap:2px;justify-content:center;margin:10px 0;}
+  .font-grid .px{width:26px;height:26px;border-radius:4px;background:#e2e8f0;transition:all .2s;}
+  .font-grid .px.on{background:#38bdf8;box-shadow:0 0 8px rgba(56,189,248,.6);}
+  .font-hex{text-align:center;font-family:Consolas,monospace;font-size:13px;color:var(--blue);margin-top:8px;}
+
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>第 4 节 交互式知识点 · OLED 显示屏</h1>
+    <div class="sub">江科大 P9 [4-1] OLED调试工具 · P10 [4-2] OLED显示屏 · SSD1306 · 软件 I2C</div>
+  </div>
+
+  <!-- ========== 0. OLED 是什么 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">0</div>OLED 是什么（为什么它叫"调试利器"）</div>
+    <div class="card-body">
+      <p><b>OLED</b>（有机发光二极管显示屏）——你能在板子上"看见"程序在干什么。<b>一句话：没有它，你只能靠 LED 亮灭猜程序状态；有了它，任何变量/数值直接显示在屏幕上。</b></p>
+      <ul>
+        <li>常见 0.96 寸，<b>SSD1306</b> 驱动芯片，<b>128×64 像素</b>，<b>I2C 接口</b>（SDA/SCL/电源/GND 四线）</li>
+        <li>江科大例程接法：<b>SCL→PB8、SDA→PB9</b>（你的工程就是这么接的）</li>
+        <li>后面所有章节（编码器、ADC、串口…）都靠 OLED 看结果——<b>它是你的"眼睛"</b></li>
+      </ul>
+      <div class="note key"><span class="t">记忆锚点</span>OLED = 显示字符串 + 显示数字 + 显示十六进制 + 显示波形。核心就一个"查字模表"的原理：<b>每个字符 → 一串点阵数据 → 屏幕上点亮对应像素</b>。</div>
+    </div>
+  </div>
+
+  <!-- ========== 1. 虚拟 OLED 屏 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">1</div>虚拟 OLED 屏（亲手驱动一块屏幕）</div>
+    <div class="card-body">
+      <p>下面是一块<b>模拟的 128×64 OLED</b>。点击按钮调用"库函数"，看屏幕怎么响应：</p>
+      <div class="oled-frame">
+        <div class="oled-screen"><canvas id="oled" width="128" height="64"></canvas></div>
+        <div class="pin">SSD1306 · 128×64 · I2C 地址 0x78</div>
+      </div>
+      <div class="oled-btns">
+        <button class="btn btn-green" onclick="demoStr()">ShowString 显示字符串</button>
+        <button class="btn btn-primary" onclick="demoNum()">ShowNum 显示数字</button>
+        <button class="btn btn-primary" onclick="demoHex()">ShowHexNum 十六进制</button>
+        <button class="btn btn-ghost" onclick="demoClear()">Clear 清屏</button>
+      </div>
+      <div class="oled-in">
+        <input id="oled-input" placeholder="输入内容（字母数字）" value="STM32">
+        <button class="btn btn-ghost" onclick="demoCustom()">显示我的输入</button>
+      </div>
+      <div class="status" id="oled-status">点击上方按钮，看这块虚拟屏如何显示</div>
+      <div class="note key"><span class="t">体会</span>OLED 显示的本质：<b>ShowString</b> 把一个字符串逐字符查字模；<b>ShowNum</b> 把数字转成字符再查字模；<b>ShowHexNum</b> 把二进制数转成 0~F 字符。全部都是"查表 + 画点"。</div>
+    </div>
+  </div>
+
+  <!-- ========== 2. 字模原理 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">2</div>字模原理（8×8 点阵是怎么变成屏幕上的字的）</div>
+    <div class="card-body">
+      <p>SSD1306 中，一个字符占 <b>8 列 × 8 行</b>，用 <b>8 个字节</b>表示（每字节 = 一列的 8 个像素，1=亮 0=灭）。点下面字符试试：</p>
+      <div class="ctl">
+        <button class="btn btn-ghost" onclick="fontChar('A')">A</button>
+        <button class="btn btn-ghost" onclick="fontChar('B')">B</button>
+        <button class="btn btn-ghost" onclick="fontChar('C')">C</button>
+        <button class="btn btn-ghost" onclick="fontChar('0')">0</button>
+        <button class="btn btn-ghost" onclick="fontChar('1')">1</button>
+        <button class="btn btn-ghost" onclick="fontChar('8')">8</button>
+        <button class="btn btn-ghost" onclick="fontChar('心')">❤（汉字）</button>
+      </div>
+      <div class="font-grid" id="font-grid"></div>
+      <div class="font-hex" id="font-hex"></div>
+      <div class="status" id="font-status"></div>
+      <div class="note key"><span class="t">看懂了什么</span>每个字符在 <code>OLED_Font.h</code> 里都有一组 hex 数组（如 <code>'A' = {0x00,0x10,0x28,0x44,0x7C,0x44,0x44,0x00}</code>）。<b>显示字符 = 把 hex 里每一位"1"画成亮像素</b>。汉字更大（16×16），所以占 32 字节。</div>
+    </div>
+  </div>
+
+  <!-- ========== 3. I2C 时序 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">3</div>软件 I2C 时序（一步步看数据怎么发出去）</div>
+    <div class="card-body">
+      <p><b>I2C = 两根线</b>：<b>SCL</b>（时钟，谁说话谁管节奏）+ <b>SDA</b>（数据，双向）。<b>软件模拟 = 用 GPIO 翻转手动"画"出协议时序</b>，不依赖硬件外设。</p>
+      <div class="i2c-wrap">
+        <svg id="i2c-svg" viewBox="0 0 640 230" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+          <style>
+            .lbl{font-family:Microsoft YaHei,monospace;font-size:12px;fill:#1e293b}
+            .phase{font-family:Microsoft YaHei,monospace;font-size:11px;fill:#2563eb}
+            .wave-scl{stroke:#2563eb;stroke-width:2;fill:none}
+            .wave-sda{stroke:#dc2626;stroke-width:2;fill:none}
+            .grid{stroke:#e2e8f0;stroke-width:1}
+          </style>
+          <!-- 网格 -->
+          <line class="grid" x1="40" y1="60" x2="620" y2="60"/>
+          <line class="grid" x1="40" y1="130" x2="620" y2="130"/>
+          <line class="grid" x1="40" y1="40" x2="40" y2="150"/>
+          <text class="lbl" x="8" y="95">SCL</text>
+          <text class="lbl" x="8" y="165">SDA</text>
+          <!-- SCL 波形 -->
+          <path class="wave-scl" id="w-scl" d="M40,90 H70 V50 H100 V90 H130 V50 H160 V90 H190 V50 H220 V90 H250 V50 H280 V90 H310 V50 H340 V90 H370 V50 H400 V90 H430 V50 H460 V90 H490 V50 H520 V90 H550 V50 H580 V90 H610"/>
+          <!-- SDA 波形（占位，JS 更新） -->
+          <path class="wave-sda" id="w-sda" d="M40,140 H620"/>
+          <!-- 阶段标签 -->
+          <g id="phase-labels">
+            <text class="phase" x="55" y="25">起始条件</text>
+            <text class="phase" x="95" y="25">设备地址 0x78 (7位+写)</text>
+            <text class="phase" x="280" y="25">控制字节</text>
+            <text class="phase" x="370" y="25">数据字节 ×N</text>
+            <text class="phase" x="520" y="25">停止条件</text>
+          </g>
+        </svg>
+      </div>
+      <div class="ctl">
+        <button class="btn btn-primary" id="i2c-play" onclick="i2cPlay()">▶ 播放完整传输</button>
+        <button class="btn btn-ghost" onclick="i2cStep()">⏭ 单步</button>
+        <button class="btn btn-ghost" onclick="i2cReset()">重置</button>
+      </div>
+      <div class="i2c-log" id="i2c-log">（点击播放/单步，看 SCL/SDA 每一步的状态）</div>
+      <table>
+        <tr><th>步骤</th><th>SCL</th><th>SDA</th><th>含义</th></tr>
+        <tr><td>起始条件 START</td><td>高</td><td><b>高→低</b>（SCL 高时 SDA 下降沿）</td><td>告诉所有设备"我要开始通信了"</td></tr>
+        <tr><td>设备地址</td><td>8 个脉冲</td><td>0x78 = 0111 1000（7位地址 0x3C + 写位0）</td><td>点名要跟谁说话</td></tr>
+        <tr><td>应答 ACK</td><td>第 9 个脉冲</td><td>从机拉低</td><td>OLED 回答"我在"</td></tr>
+        <tr><td>控制字节</td><td>8 脉冲</td><td>0x00（命令）或 0x40（数据）</td><td>告诉 OLED"下面发的是命令还是数据"</td></tr>
+        <tr><td>数据字节</td><td>每个 8 脉冲</td><td>字模数据</td><td>真正的内容</td></tr>
+        <tr><td>停止条件 STOP</td><td>高</td><td><b>低→高</b>（SCL 高时 SDA 上升沿）</td><td>"我说完了"</td></tr>
+      </table>
+      <div class="note warn"><span class="t">面试常问</span>为什么 OLED 驱动"直接复制就能用"？因为它本质就是 <b>GPIO 输出 + 时序</b>——你在第 3 节学的推挽输出，在这里被用来"画"协议波形。底层还是 GPIO！</div>
+    </div>
+  </div>
+
+  <!-- ========== 4. API 速查 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">4</div>API 速查表（用起来就这几句）</div>
+    <div class="card-body">
+      <table>
+        <tr><th>函数</th><th>作用</th><th>示例</th></tr>
+        <tr><td><code>OLED_Init()</code></td><td>初始化（上电时序+配置命令+清屏）</td><td>main 开头调用一次</td></tr>
+        <tr><td><code>OLED_Clear()</code></td><td>清屏</td><td>刷新前调用</td></tr>
+        <tr><td><code>OLED_ShowChar(x, y, ch)</code></td><td>显示单个字符</td><td>x=1~16 列，y=1~4 行</td></tr>
+        <tr><td><code>OLED_ShowString(x, y, str)</code></td><td>显示字符串</td><td>OLED_ShowString(1,1,"Hello")</td></tr>
+        <tr><td><code>OLED_ShowNum(x, y, num, len)</code></td><td>显示数字（补零对齐）</td><td>OLED_ShowNum(1,7,1234,4) → "1234"</td></tr>
+        <tr><td><code>OLED_ShowSignedNum(x, y, num, len)</code></td><td>显示有符号数</td><td>编码器计数（可正可负）</td></tr>
+        <tr><td><code>OLED_ShowHexNum(x, y, num, len)</code></td><td>显示十六进制</td><td>寄存器值</td></tr>
+      </table>
+      <div class="note key"><span class="t">坐标规则</span>OLED 4 行 × 16 列（每字符 8×8 像素，128/8=16 列，64/8=8 行但驱动封装成 4 行大字）。<b>x=列、y=行</b>，写错了字会跑到别的位置。</div>
+      <div class="note ok"><span class="t">本项目用法</span>你 1006 工程里 <code>OLED_ShowNum(1,1,Num,4)</code> 每秒刷新定时器计数——这就是"OLED 看结果"的标准姿势：<b>主循环里不断刷新显示</b>。</div>
+    </div>
+  </div>
+
+  <!-- ========== 5. 软件 vs 硬件 I2C ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">5</div>软件 I2C vs 硬件 I2C</div>
+    <div class="card-body">
+      <table>
+        <tr><th></th><th>软件 I2C（江科大例程）</th><th>硬件 I2C（F103 外设）</th></tr>
+        <tr><td>原理</td><td>GPIO 翻转手动产生时序</td><td>I2C 外设自动产生时序</td></tr>
+        <tr><td>引脚</td><td>任意 GPIO（PB8/PB9）</td><td>固定引脚（I2C1=PB6/PB7 或重映射）</td></tr>
+        <tr><td>速度</td><td>慢（软件模拟）</td><td>快（硬件）</td></tr>
+        <tr><td>复杂度</td><td>代码直观、好调试</td><td>库函数少但出问题难查</td></tr>
+        <tr><td>选谁</td><td><b>入门/教学首选</b></td><td>高速大量传输时用</td></tr>
+      </table>
+      <div class="note warn"><span class="t">坑</span>F103 硬件 I2C 有"兼容性不佳"的传说（卡死问题），所以江科大教程直接教软件 I2C——<b>稳定、易懂、引脚随便</b>。你的 OLED 就是软件 I2C。</div>
+    </div>
+  </div>
+
+  <!-- ========== 6. 避坑 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">!</div>实战坑</div>
+    <div class="card-body">
+      <div class="note danger"><span class="t">① 显示乱码/花屏</span>多半是字模表 OLED_Font.h 没加进工程，或引脚接反（SDA/SCL 对调）。先查接线，再查文件。</div>
+      <div class="note warn"><span class="t">② 坐标超界</span>OLED_ShowString(20,1,...) 第 20 列超出了 16 列范围 → 显示错乱。列范围 1~16，行范围 1~4。</div>
+      <div class="note warn"><span class="t">③ 忘了 OLED_Init</span>main 里没调 OLED_Init()，屏幕全黑。所有外设都要先 Init 再用——第 3 节的老规矩。</div>
+    </div>
+  </div>
+
+  <div class="footer">第 4 节 交互式知识点 · 江科大 STM32 入门教程 · 下一步：第 4 节自测</div>
+</div>
+
+<script>
+/* ============ 模拟 OLED ============ */
+const canvas = document.getElementById('oled');
+const ctx = canvas.getContext('2d');
+
+/* 简易 8x8 字模（字母数字，演示用） */
+const FONT = {
+  'A':[0x00,0x10,0x28,0x44,0x7C,0x44,0x44,0x00],
+  'B':[0x00,0x78,0x44,0x78,0x44,0x44,0x78,0x00],
+  'C':[0x00,0x3C,0x44,0x40,0x40,0x44,0x3C,0x00],
+  'D':[0x00,0x78,0x44,0x44,0x44,0x44,0x78,0x00],
+  'E':[0x00,0x7C,0x40,0x78,0x40,0x40,0x7C,0x00],
+  'F':[0x00,0x7C,0x40,0x78,0x40,0x40,0x40,0x00],
+  'G':[0x00,0x3C,0x44,0x40,0x4C,0x44,0x3C,0x00],
+  'H':[0x00,0x44,0x44,0x7C,0x44,0x44,0x44,0x00],
+  'I':[0x00,0x38,0x10,0x10,0x10,0x10,0x38,0x00],
+  'J':[0x00,0x1C,0x08,0x08,0x08,0x48,0x30,0x00],
+  'K':[0x00,0x44,0x48,0x70,0x48,0x44,0x44,0x00],
+  'L':[0x00,0x40,0x40,0x40,0x40,0x40,0x7C,0x00],
+  'M':[0x00,0x44,0x6C,0x54,0x44,0x44,0x44,0x00],
+  'N':[0x00,0x44,0x64,0x54,0x4C,0x44,0x44,0x00],
+  'O':[0x00,0x38,0x44,0x44,0x44,0x44,0x38,0x00],
+  'P':[0x00,0x78,0x44,0x78,0x40,0x40,0x40,0x00],
+  'Q':[0x00,0x38,0x44,0x44,0x54,0x48,0x34,0x00],
+  'R':[0x00,0x78,0x44,0x78,0x48,0x44,0x44,0x00],
+  'S':[0x00,0x3C,0x40,0x38,0x04,0x04,0x78,0x00],
+  'T':[0x00,0x7C,0x10,0x10,0x10,0x10,0x10,0x00],
+  'U':[0x00,0x44,0x44,0x44,0x44,0x44,0x38,0x00],
+  'V':[0x00,0x44,0x44,0x44,0x44,0x28,0x10,0x00],
+  'W':[0x00,0x44,0x44,0x54,0x54,0x6C,0x44,0x00],
+  'X':[0x00,0x44,0x28,0x10,0x28,0x44,0x44,0x00],
+  'Y':[0x00,0x44,0x28,0x10,0x10,0x10,0x10,0x00],
+  'Z':[0x00,0x7C,0x08,0x10,0x20,0x40,0x7C,0x00],
+  '0':[0x00,0x38,0x44,0x4C,0x54,0x64,0x38,0x00],
+  '1':[0x00,0x10,0x30,0x10,0x10,0x10,0x38,0x00],
+  '2':[0x00,0x38,0x44,0x08,0x10,0x20,0x7C,0x00],
+  '3':[0x00,0x38,0x44,0x08,0x08,0x44,0x38,0x00],
+  '4':[0x00,0x08,0x18,0x28,0x7C,0x08,0x08,0x00],
+  '5':[0x00,0x7C,0x40,0x78,0x04,0x04,0x78,0x00],
+  '6':[0x00,0x38,0x40,0x78,0x44,0x44,0x38,0x00],
+  '7':[0x00,0x7C,0x08,0x10,0x20,0x20,0x20,0x00],
+  '8':[0x00,0x38,0x44,0x38,0x44,0x44,0x38,0x00],
+  '9':[0x00,0x38,0x44,0x3C,0x04,0x44,0x38,0x00],
+  ' ': [0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],
+  '.': [0x00,0x00,0x00,0x00,0x00,0x30,0x30,0x00],
+  ':': [0x00,0x00,0x30,0x00,0x30,0x00,0x00,0x00],
+  '-': [0x00,0x00,0x00,0x7C,0x00,0x00,0x00,0x00],
+};
+const HZ = {  // 汉字简易 16x16 演示（用两个字符代替）
+  '心': null,
+};
+
+function oledClear(){
+  ctx.fillStyle = '#0a0f1e';
+  ctx.fillRect(0,0,128,64);
+}
+function drawGlyph(glyph, x, y, color){
+  ctx.fillStyle = color;
+  for(let row=0; row<8; row++){
+    const b = glyph[row];
+    for(let col=0; col<8; col++){
+      if(b & (0x80 >> col)){
+        ctx.fillRect(x+col*1, y+row*1, 1, 1);
+      }
+    }
+  }
+}
+function showStringAt(str, x, y, color){
+  for(let i=0; i<str.length; i++){
+    const ch = str[i].toUpperCase();
+    const g = FONT[ch] || FONT[' '];
+    drawGlyph(g, x+i*8, y, color);
+  }
+}
+oledClear();
+
+let demoState = 0;
+function demoStr(){
+  oledClear();
+  showStringAt('Hello STM32', 8, 8, '#38bdf8');
+  showStringAt('I2C OLED', 8, 28, '#a78bfa');
+  demoState = 1;
+  document.getElementById('oled-status').textContent = 'ShowString：逐字符查字模 → 点亮像素';
+}
+function demoNum(){
+  oledClear();
+  showStringAt('Count:', 8, 8, '#38bdf8');
+  showStringAt('1234', 8, 28, '#4ade80');
+  demoState = 2;
+  document.getElementById('oled-status').textContent = 'ShowNum：数字 1234 转字符 → 查字模显示';
+}
+function demoHex(){
+  oledClear();
+  showStringAt('0x', 8, 8, '#38bdf8');
+  showStringAt('3C', 8, 28, '#fbbf24');
+  demoState = 3;
+  document.getElementById('oled-status').textContent = 'ShowHexNum：寄存器值转 16 进制字符显示';
+}
+function demoClear(){
+  oledClear();
+  demoState = 0;
+  document.getElementById('oled-status').textContent = 'Clear：清屏（OLED_Clear 的原理）';
+}
+function demoCustom(){
+  const v = document.getElementById('oled-input').value.trim().toUpperCase();
+  oledClear();
+  showStringAt(v || 'EMPTY', 8, 16, '#38bdf8');
+  showStringAt('my OLED!', 8, 40, '#4ade80');
+  document.getElementById('oled-status').textContent = '显示「' + (v||'EMPTY') + '」：String + 自定义';
+}
+demoStr();
+
+/* ============ 字模演示 ============ */
+function fontChar(ch){
+  const grid = document.getElementById('font-grid');
+  grid.innerHTML = '';
+  let glyph;
+  if(ch === '心'){
+    // 简易爱心 16x16（用 8x8 演示变形）
+    glyph = [0x00,0x6C,0x92,0x92,0x92,0x44,0x28,0x10];
+    document.getElementById('font-hex').textContent = '汉字在 OLED_Font.h 中是 16×16 点阵 = 32 字节（此图为 8×8 示意）';
+  } else {
+    glyph = FONT[ch];
+    const hexs = glyph.map(b=>'0x'+b.toString(16).padStart(2,'0').toUpperCase()).join(', ');
+    document.getElementById('font-hex').textContent = ch + ' 的字模（8 字节）：{ ' + hexs + ' }';
+  }
+  for(let row=0; row<8; row++){
+    const b = glyph[row];
+    for(let col=0; col<8; col++){
+      const d = document.createElement('div');
+      d.className = 'px' + ((b & (0x80>>col)) ? ' on' : '');
+      grid.appendChild(d);
+    }
+  }
+  document.getElementById('font-status').textContent = '「'+ch+'」→ 每行一个字节，1 亮 0 灭，8 字节组成 8×8 点阵';
+}
+fontChar('A');
+
+/* ============ I2C 时序 ============ */
+let i2cTimer = null;
+function i2cReset(){
+  clearInterval(i2cTimer);
+  document.getElementById('i2c-play').disabled = false;
+  document.getElementById('i2c-log').textContent = '（点击播放/单步，看 SCL/SDA 每一步的状态）';
+  const sda = document.getElementById('w-sda');
+  sda.setAttribute('d','M40,140 H620');
+}
+let sdaPath = 'M40,140 ';
+function i2cStep(){
+  const log = document.getElementById('i2c-log');
+  const steps = [
+    ['① 起始条件 START：SCL 高时 SDA 高→低，告诉设备开始通信','M40,140 L70,140 L70,120 L100,120 L100,140 '],
+    ['② 设备地址 0x78：SCL 8 个脉冲，SDA 依次 0111 1000 + ACK','M100,140 L130,140 L130,120 L160,120 L160,140 L190,140 L190,120 L220,120 L220,140 L250,140 L250,120 L280,120 L280,140 '],
+    ['③ 控制字节 0x00（命令）：告诉 OLED 下面发命令','M280,140 L310,140 L310,120 L340,120 L340,140 L370,140 L370,120 L400,120 L400,140 '],
+    ['④ 数据字节：字模数据 8 位 + ACK，可重复多个','M400,140 L430,140 L430,120 L460,120 L460,140 L490,140 L490,120 L520,120 L520,140 '],
+    ['⑤ 停止条件 STOP：SCL 高时 SDA 低→高，通信结束','M520,140 L550,140 L550,120 L580,120 L580,140 H620'],
+  ];
+  const cur = parseInt(document.getElementById('i2c-log').dataset.step||'-1') + 1;
+  if(cur >= steps.length){ i2cReset(); return; }
+  sdaPath += steps[cur][1].replace('M40,140','');
+  document.getElementById('w-sda').setAttribute('d', sdaPath);
+  log.textContent = steps[cur][0];
+  log.dataset.step = cur;
+}
+function i2cPlay(){
+  i2cReset();
+  document.getElementById('i2c-play').disabled = true;
+  let n = 0;
+  const steps = 5;
+  i2cTimer = setInterval(()=>{
+    i2cStep();
+    n++;
+    if(n >= steps){ clearInterval(i2cTimer); document.getElementById('i2c-play').disabled=false; }
+  }, 900);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 2 节 交互式知识点 · 开发环境与工程搭建（江科大 P3-P4）</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --border:#e2e8f0;
+    --text:#1e293b; --muted:#64748b;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --green:#059669; --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --orange:#d97706; --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --red:#dc2626; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.8;padding:24px 16px;}
+  .wrap{max-width:920px;margin:0 auto;}
+
+  .hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:24px 28px;margin-bottom:20px;}
+  .hero h1{font-size:24px;margin-bottom:4px;}
+  .hero .sub{opacity:.9;font-size:13px;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;}
+  .card-head{padding:12px 22px;background:var(--blue-bg);border-bottom:1px solid var(--border);font-weight:600;color:var(--blue);font-size:15px;display:flex;align-items:center;gap:10px;}
+  .card-head .num{background:var(--blue);color:#fff;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .card-body{padding:18px 22px;}
+
+  h4{margin:10px 0 4px;font-size:14px;}
+  p{margin:5px 0;}
+  ul,ol{margin:6px 0 6px 22px;}
+  li{margin:3px 0;}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;}
+  th{background:var(--blue-bg);color:var(--blue);text-align:left;padding:8px 12px;border:1px solid var(--border);font-weight:600;}
+  td{padding:8px 12px;border:1px solid var(--border);}
+  tr:nth-child(even) td{background:#f8fafc;}
+
+  pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:14px 18px;overflow-x:auto;font-size:13px;line-height:1.7;margin:10px 0;}
+  code{font-family:"Consolas","Courier New",monospace;}
+
+  .note{border-radius:10px;padding:10px 14px;margin:10px 0;font-size:13.5px;border:1px solid transparent;}
+  .note.key{background:var(--blue-bg);border-color:var(--blue-bd);color:#1e3a8a;}
+  .note.warn{background:var(--orange-bg);border-color:var(--orange-bd);color:#92400e;}
+  .note.danger{background:var(--red-bg);border-color:var(--red-bd);color:#991b1b;}
+  .note.ok{background:var(--green-bg);border-color:var(--green-bd);color:#065f46;}
+  .note .t{font-weight:700;margin-right:6px;}
+
+  /* ===== 交互：步骤向导 ===== */
+  .wizard{position:relative;}
+  .wiz-step{display:flex;gap:14px;padding:12px 16px;border:1px solid var(--border);border-radius:10px;margin:8px 0;cursor:pointer;transition:all .25s;background:#f8fafc;}
+  .wiz-step:hover{border-color:var(--blue);background:var(--blue-bg);}
+  .wiz-step.active{border-color:var(--blue);background:var(--blue-bg);box-shadow:0 2px 8px rgba(37,99,235,.15);}
+  .wiz-step.done{border-color:var(--green-bd);background:var(--green-bg);}
+  .wiz-idx{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px;}
+  .wiz-step.done .wiz-idx{background:var(--green);}
+  .wiz-body{flex:1;}
+  .wiz-title{font-weight:600;font-size:14px;}
+  .wiz-detail{display:none;margin-top:6px;font-size:13.5px;color:var(--text);border-top:1px dashed var(--border);padding-top:8px;}
+  .wiz-step.open .wiz-detail{display:block;}
+  .wiz-detail code{background:#eef2f7;color:#1e3a8a;padding:1px 6px;border-radius:4px;font-size:12.5px;}
+  .wiz-ctl{display:flex;gap:10px;margin:14px 0 4px;}
+  .btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#1d4ed8;}
+  .btn-ghost{background:#eef2f7;color:var(--text);}
+  .btn-ghost:hover{background:#e2e8f0;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* ===== 交互：目录树 ===== */
+  .tree{font-size:13.5px;}
+  .tree-node{border:1px solid var(--border);border-radius:8px;margin:6px 0;overflow:hidden;background:#f8fafc;}
+  .tree-folder{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;font-weight:600;user-select:none;transition:background .2s;}
+  .tree-folder:hover{background:var(--blue-bg);}
+  .tree-folder .arrow{transition:transform .25s;font-size:11px;color:var(--muted);}
+  .tree-node.open .tree-folder .arrow{transform:rotate(90deg);}
+  .tree-folder .tag{font-size:11px;color:var(--blue);background:var(--blue-bg);border-radius:10px;padding:1px 8px;margin-left:auto;}
+  .tree-content{display:none;padding:8px 14px 10px;border-top:1px solid var(--border);background:#fff;}
+  .tree-node.open .tree-content{display:block;}
+  .tree-content p{font-size:13px;color:var(--text);}
+  .tree-content code{background:#eef2f7;color:#1e3a8a;padding:1px 6px;border-radius:4px;font-size:12px;}
+
+  /* ===== 交互：即时问答 ===== */
+  .iq{margin:12px 0;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;}
+  .iq-q{font-weight:600;font-size:14px;margin-bottom:10px;}
+  .iq-q .pts{font-size:11px;color:var(--muted);font-weight:400;margin-left:8px;}
+  .iq-opts{display:flex;flex-direction:column;gap:8px;}
+  .iq-opt{display:block;padding:9px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13.5px;transition:all .2s;background:#fff;}
+  .iq-opt:hover{border-color:var(--blue);background:var(--blue-bg);}
+  .iq-opt.correct{border-color:var(--green);background:var(--green-bg);color:#065f46;font-weight:600;}
+  .iq-opt.wrong{border-color:var(--red);background:var(--red-bg);color:#991b1b;}
+  .iq-opt.locked{cursor:default;opacity:.85;}
+  .iq-exp{display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;}
+  .iq.show-exp .iq-exp{display:block;}
+  .iq-exp.ok{background:var(--green-bg);border:1px solid var(--green-bd);}
+  .iq-exp.no{background:var(--red-bg);border:1px solid var(--red-bd);}
+
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>第 2 节 交互式知识点 · 开发环境与工程搭建</h1>
+    <div class="sub">江科大 P3 [2-1] 软件安装 + P4 [2-2] 新建工程 · 点击下方卡片逐步探索</div>
+  </div>
+
+  <!-- ========== 1. 软件清单 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">1</div>需要哪些软件</div>
+    <div class="card-body">
+      <table>
+        <tr><th>软件</th><th>作用</th><th>备注</th></tr>
+        <tr><td><b>Keil MDK5</b></td><td>编辑 + 编译 + 下载 + 调试 一体化</td><td>装完需注册 License</td></tr>
+        <tr><td><b>STM32 固件库</b></td><td>标准外设库源码（stm32f10x_*.c/h）</td><td>ST 官方 V3.5</td></tr>
+        <tr><td><b>ST-Link 驱动</b></td><td>让电脑识别 STLink 调试器</td><td>Win10/11 一般自动装</td></tr>
+        <tr><td><b>CH340 驱动</b></td><td>USB 转串口（下载/串口调试）</td><td>第 9 章串口才用到</td></tr>
+      </table>
+      <div class="note key"><span class="t">理解</span>Keil 只是"壳"（IDE），它<strong>不自带芯片信息</strong>。F103 的寄存器定义、启动代码来自两部分：芯片支持包（DFP）+ 固件库源码——这就是为什么新建工程要"从模板复制"，因为模板把这两样都配好了。</div>
+    </div>
+  </div>
+
+  <!-- ========== 2. 新建工程七步（交互向导） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">2</div>新建工程七步（点击步骤展开细节 · 用"下一步"逐步走）</div>
+    <div class="card-body">
+      <div class="wiz-ctl">
+        <button class="btn btn-primary" onclick="wizNext()">下一步 ▶</button>
+        <button class="btn btn-ghost" onclick="wizPrev()">◀ 上一步</button>
+        <button class="btn btn-ghost" onclick="wizReset()">重置</button>
+      </div>
+      <div class="wizard" id="wizard">
+        <div class="wiz-step" onclick="wizOpen(0)">
+          <div class="wiz-idx">1</div>
+          <div class="wiz-body">
+            <div class="wiz-title">New Project → 选芯片 STM32F103C8</div>
+            <div class="wiz-detail">告诉 Keil 目标芯片型号。选对芯片后 Keil 才知道：<br>• 有哪些外设寄存器可访问<br>• 用什么启动文件（md/hd）<br>• 内存布局（Flash/SRAM 大小）<br><code>STM32F103C8</code> = 48脚 / 64KB Flash / 中容量</div>
+          </div>
+        </div>
+        <div class="wiz-step" onclick="wizOpen(1)">
+          <div class="wiz-idx">2</div>
+          <div class="wiz-body">
+            <div class="wiz-title">添加启动文件 startup_stm32f10x_md.s</div>
+            <div class="wiz-detail">芯片上电后执行的第一段汇编代码：<br>• 建立<strong>中断向量表</strong>（复位/中断 → 处理函数地址表）<br>• 初始化堆栈指针 SP<br>• 调用 <code>SystemInit()</code> 配时钟 → 跳转 <code>main()</code><br><code>md</code> = Medium Density（中容量，64~128KB Flash 的芯片用）<br><strong>选错启动文件 = 上电就跑飞</strong></div>
+          </div>
+        </div>
+        <div class="wiz-step" onclick="wizOpen(2)">
+          <div class="wiz-idx">3</div>
+          <div class="wiz-body">
+            <div class="wiz-title">添加固件库源码（core_cm3.c + system_stm32f10x.c + 外设 .c）</div>
+            <div class="wiz-detail">• <code>core_cm3.c</code>：Cortex-M3 内核函数（NVIC/SysTick 操作）<br>• <code>system_stm32f10x.c</code>：系统时钟初始化（72MHz 配置）<br>• <code>stm32f10x_gpio.c</code> 等：各外设库函数实现<br><strong>用什么外设就加什么 .c</strong>（全加也行，就是编译慢点）</div>
+          </div>
+        </div>
+        <div class="wiz-step" onclick="wizOpen(3)">
+          <div class="wiz-idx">4</div>
+          <div class="wiz-body">
+            <div class="wiz-title">添加用户代码 main.c</div>
+            <div class="wiz-detail">你写的程序入口。Keil 会把它和库一起编译链接，生成最终固件 <code>.hex/.axf</code>。<br>main.c 本质：调用各外设的 Init → while(1) 主循环。<br><span style="color:#d97706">新手常见坑：只建了文件忘了加进工程树，编译报 "Led.c not found"</span></div>
+          </div>
+        </div>
+        <div class="wiz-step" onclick="wizOpen(4)">
+          <div class="wiz-idx">5</div>
+          <div class="wiz-body">
+            <div class="wiz-title">配置宏定义 USE_STDPERIPH_DRIVER、STM32F10X_MD</div>
+            <div class="wiz-detail">两个宏是"开关"：<br>• <code>USE_STDPERIPH_DRIVER</code> → 启用标准外设库（没有它，stm32f10x.h 里函数声明全没有）<br>• <code>STM32F10X_MD</code> → 声明芯片是中容量（影响 Flash 分页大小等配置）<br><strong>换芯片必须改第二个宏</strong>：LD（低容量）/ MD（中）/ HD（高）/ XL（超大）</div>
+          </div>
+        </div>
+        <div class="wiz-step" onclick="wizOpen(5)">
+          <div class="wiz-idx">6</div>
+          <div class="wiz-body">
+            <div class="wiz-title">配置头文件路径 Include Paths</div>
+            <div class="wiz-detail">编译器找 <code>#include "xxx.h"</code> 时的搜索目录清单：<br><code>.\Start; .\Library; .\System; .\Driver; .\User</code><br>少配一个目录 → 报 <code>cannot open source input file</code><br><strong>新增模块文件夹（如 Driver）时，记得把路径加进来</strong></div>
+          </div>
+        </div>
+        <div class="wiz-step" onclick="wizOpen(6)">
+          <div class="wiz-idx">7</div>
+          <div class="wiz-body">
+            <div class="wiz-title">配置调试器：ST-Link + Port 选 SW</div>
+            <div class="wiz-detail">告诉 Keil 用什么工具把固件烧进芯片：<br>• Debug → <code>ST-Link Debugger</code><br>• Settings → Port 选 <strong>SW</strong>（不是 JTAG，省引脚）<br>• Reset 选 HW RESET 或 Connect under Reset（部分板子默认连不上）<br><strong>接错线 / 没选 SW → 报 No target connected</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="note ok"><span class="t">七步记忆</span><b>芯片 → 启动 → 库 → 用户 → 宏 → 路径 → 调试器</b>。复制模板时检查这 7 处，基本不会出问题。</div>
+    </div>
+  </div>
+
+  <!-- ========== 3. 工程目录（交互树） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">3</div>工程目录分工（点击文件夹展开看内容）</div>
+    <div class="card-body">
+      <div class="tree">
+        <div class="tree-node" onclick="treeToggle(0)">
+          <div class="tree-folder"><span class="arrow">▶</span>📁 Start/<span class="tag">启动 + 内核</span></div>
+          <div class="tree-content">
+            <p>• <code>startup_stm32f10x_md.s</code> — 启动文件（向量表 + 复位流程）<br>• <code>core_cm3.h / core_cm3.c</code> — Cortex-M3 内核定义<br>• <code>system_stm32f10x.c</code> — 系统时钟初始化<br><strong>一般不用动</strong>，复制模板带来即可</p>
+          </div>
+        </div>
+        <div class="tree-node" onclick="treeToggle(1)">
+          <div class="tree-folder"><span class="arrow">▶</span>📁 Library/<span class="tag">固件库源码</span></div>
+          <div class="tree-content">
+            <p>• <code>stm32f10x_gpio.c/h</code>、<code>stm32f10x_rcc.c/h</code>、<code>stm32f10x_tim.c/h</code>…<br>• <code>stm32f10x.h</code> — 总头文件（寄存器定义）<br>• <code>misc.c/h</code> — NVIC 等内核外设<br><strong>按需添加</strong>：用到哪个外设加哪个 .c，全加也行</p>
+          </div>
+        </div>
+        <div class="tree-node" onclick="treeToggle(2)">
+          <div class="tree-folder"><span class="arrow">▶</span>📁 System/<span class="tag">公共模块</span></div>
+          <div class="tree-content">
+            <p>• <code>Delay.c/h</code> — 软件延时（SysTick）<br>• <code>Timer.c/h</code> — 定时器封装（可选）<br><strong>跨工程复用的通用代码放这里</strong></p>
+          </div>
+        </div>
+        <div class="tree-node" onclick="treeToggle(3)">
+          <div class="tree-folder"><span class="arrow">▶</span>📁 Driver/<span class="tag">外设驱动（你写的）</span></div>
+          <div class="tree-content">
+            <p>• <code>Led.c/h</code>、<code>Key.c/h</code>、<code>OLED.c/h</code>、<code>Servo.c/h</code>、<code>Encoder.c/h</code>…<br><strong>你的主力工作区</strong>：一个外设 = 一对 .c/.h 文件<br>命名规范：驱动名 + 下划线 + 函数名（Led_Init、Key_GetNum）</p>
+          </div>
+        </div>
+        <div class="tree-node" onclick="treeToggle(4)">
+          <div class="tree-folder"><span class="arrow">▶</span>📁 User/<span class="tag">应用层</span></div>
+          <div class="tree-content">
+            <p>• <code>main.c</code> — 主程序（初始化 + 主循环）<br>• <code>stm32f10x_it.c</code> — 中断服务函数<br>• <code>stm32f10x_conf.h</code> — 库配置（勾选外设模块）<br><strong>main.c 只负责"指挥"</strong>，具体功能在 Driver/System 里</p>
+          </div>
+        </div>
+      </div>
+      <div class="note key"><span class="t">分层思想</span>Start/Library 是"地基"（模板自带），System/Driver 是"组件"（复用），User 是"应用"（每工程不同）。<strong>维护习惯比代码本身重要</strong>——这也是以后工作的项目规范。</div>
+    </div>
+  </div>
+
+  <!-- ========== 4. 关键概念 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">4</div>两个核心概念（搞懂=入门一半）</div>
+    <div class="card-body">
+      <h4>① 固件库两层封装</h4>
+      <pre><code>// 寄存器层：直接操作寄存器（快，但繁琐、可读性差）
+GPIOA-&gt;ODR |= 0x0010;
+
+// 库函数层：封装好的函数（底层还是写寄存器，编译器会优化）
+GPIO_SetBits(GPIOA, GPIO_Pin_4);</code></pre>
+      <div class="note key"><span class="t">性能</span>两者性能几乎无差别——库函数多是指令内联/宏展开。入门用库函数，看懂库源码（stm32f10x_gpio.c）是进阶关键。</div>
+
+      <h4>② 工程配置文件 stm32f10x_conf.h</h4>
+      <p>它通过注释/取消注释控制哪些外设库模块被编译（省 Flash 空间）：</p>
+      <pre><code>#include "stm32f10x_gpio.h"
+// #include "stm32f10x_spi.h"   ← 不用 SPI 就注释掉
+// #include "stm32f10x_usart.h" ← 用 USART 就取消注释</code></pre>
+      <div class="note warn"><span class="t">坑</span>如果把用到的外设头文件在 conf.h 里注释掉，编译会报 <code>identifier is undefined</code>——症状很诡异，其实只是 conf.h 没勾选。</div>
+    </div>
+  </div>
+
+  <!-- ========== 5. 即时问答 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">5</div>即时自测（点选项立刻见对错）</div>
+    <div class="card-body">
+
+      <div class="iq" id="iq0">
+        <div class="iq-q">1. 启动文件 startup_stm32f10x_md.s 里的 "md" 代表什么？<span class="pts">点击选项</span></div>
+        <div class="iq-opts">
+          <div class="iq-opt" onclick="iqAns(0,0)">Micro Debug（微型调试模式）</div>
+          <div class="iq-opt" onclick="iqAns(0,1)">Medium Density，中容量芯片（64~128KB Flash）专用</div>
+          <div class="iq-opt" onclick="iqAns(0,2)">Multiple Devices（多设备支持）</div>
+          <div class="iq-opt" onclick="iqAns(0,3)">Main Driver（主驱动文件）</div>
+        </div>
+        <div class="iq-exp ok" id="iq0-ok"><strong>✓ 正确！</strong>md = Medium Density。C8T6（64KB Flash）正好是中容量，所以用 <code>startup_stm32f10x_md.s</code>。选错启动文件芯片上电就跑飞。</div>
+        <div class="iq-exp no" id="iq0-no"><strong>✗ 不对。</strong>md = <strong>Medium Density</strong>（中容量，64~128KB Flash）。C8T6 是 64KB Flash = 中容量，所以用它。启动文件负责上电初始化（向量表 + 堆栈 + 进 main）。</div>
+      </div>
+
+      <div class="iq" id="iq1">
+        <div class="iq-q">2. 宏定义 STM32F10X_MD 漏写会发生什么？<span class="pts">点击选项</span></div>
+        <div class="iq-opts">
+          <div class="iq-opt" onclick="iqAns(1,0)">没有任何影响，写不写都行</div>
+          <div class="iq-opt" onclick="iqAns(1,1)">编译报错：找不到 stm32f10x.h</div>
+          <div class="iq-opt" onclick="iqAns(1,2)">库函数按"错误容量"配置 Flash 分页等参数，可能导致烧录/擦除异常</div>
+          <div class="iq-opt" onclick="iqAns(1,3)">程序能编译，但下载一定失败</div>
+        </div>
+        <div class="iq-exp ok" id="iq1-ok"><strong>✓ 正确！</strong>STM32F10X_MD 告诉库"芯片是中容量"，影响 Flash 分页大小等参数。选错容量可能导致烧录异常。换芯片必须同步改这个宏（LD/MD/HD/XL）。</div>
+        <div class="iq-exp no" id="iq1-no"><strong>✗ 不对。</strong>STM32F10X_MD 是"芯片容量开关"，影响 Flash 分页等参数配置。漏写或写错 → 库按错误容量配置 → 烧录/擦除可能异常。换芯片必须同步改（LD/MD/HD/XL）。</div>
+      </div>
+
+      <div class="iq" id="iq2">
+        <div class="iq-q">3. #include "Led.h" 报 cannot open source input file，第一反应查什么？<span class="pts">点击选项</span></div>
+        <div class="iq-opts">
+          <div class="iq-opt" onclick="iqAns(2,0)">Led.h 文件内容写错了</div>
+          <div class="iq-opt" onclick="iqAns(2,1)">Include Paths 里有没有 Led.h 所在目录（如 .\Driver）</div>
+          <div class="iq-opt" onclick="iqAns(2,2)">Keil 没注册，需要重新激活</div>
+          <div class="iq-opt" onclick="iqAns(2,3)">芯片型号选错了</div>
+        </div>
+        <div class="iq-exp ok" id="iq2-ok"><strong>✓ 正确！</strong>编译器按 Include Paths 的目录清单找 .h 文件。目录里没有 → 报 cannot open。加路径 or 确认文件名大小写/拼写。这是 1002 踩过的坑。</div>
+        <div class="iq-exp no" id="iq2-no"><strong>✗ 不对。</strong>报 cannot open 说明编译器<strong>找不到文件</strong>。第一反应查：① Include Paths 是否包含 Led.h 所在目录；② 文件名拼写/大小写。文件内容错误会报别的错（如语法错误）。</div>
+      </div>
+
+      <div class="iq" id="iq3">
+        <div class="iq-q">4. 库函数（GPIO_SetBits）和寄存器操作（GPIOA-&gt;ODR），性能哪个快？<span class="pts">点击选项</span></div>
+        <div class="iq-opts">
+          <div class="iq-opt" onclick="iqAns(3,0)">库函数慢很多，因为多了函数调用开销</div>
+          <div class="iq-opt" onclick="iqAns(3,1)">寄存器操作一定更快</div>
+          <div class="iq-opt" onclick="iqAns(3,2)">差不多，库函数多为内联/宏，编译器会优化成等价的寄存器操作</div>
+          <div class="iq-opt" onclick="iqAns(3,3)">库函数快，因为固件库做了优化</div>
+        </div>
+        <div class="iq-exp ok" id="iq3-ok"><strong>✓ 正确！</strong>库函数底层就是操作寄存器，多为内联/宏实现，编译器优化后与直接写寄存器等价。性能差距可忽略，入门用库函数可读性更好。</div>
+        <div class="iq-exp no" id="iq3-no"><strong>✗ 不对。</strong>两者性能几乎无差别——库函数封装的是寄存器操作，内联/宏展开后编译器会优化成等价指令。入门用库函数（可读性），进阶直接操作寄存器（更精细控制）。</div>
+      </div>
+
+      <div class="iq" id="iq4">
+        <div class="iq-q">5. Keil 配置调试器时，Port 为什么选 SW 而不是 JTAG？<span class="pts">点击选项</span></div>
+        <div class="iq-opts">
+          <div class="iq-opt" onclick="iqAns(4,0)">SW 下载速度比 JTAG 快 10 倍</div>
+          <div class="iq-opt" onclick="iqAns(4,1)">SW（SWD）只要 2 根信号线，省引脚；ST-Link 和板子都支持，默认用它</div>
+          <div class="iq-opt" onclick="iqAns(4,2)">JTAG 已经停产，Keil 不推荐</div>
+          <div class="iq-opt" onclick="iqAns(4,3)">SW 不需要共地</div>
+        </div>
+        <div class="iq-exp ok" id="iq4-ok"><strong>✓ 正确！</strong>SWD 只需 SWDIO+SWCLK 两根信号线，比 JTAG（5 线）省引脚。你的板子和 ST-Link 都走 SWD，所以选 SW。选错/接错 → No target connected。</div>
+        <div class="iq-exp no" id="iq4-no"><strong>✗ 不对。</strong>选 SW 是因为 <strong>SWD 只需 2 根信号线</strong>（SWDIO=PA13、SWCLK=PA14），比 JTAG 的 5 根线省引脚，且板子/ST-Link 都默认支持。下载速度不是主要考虑。</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">第 2 节 交互式知识点 · 江科大 STM32 入门教程 · 下一步：第 3 节 GPIO</div>
+</div>
+
+<script>
+/* ===== 七步向导 ===== */
+const steps = document.querySelectorAll('.wiz-step');
+let cur = -1;
+function wizRender(){
+  steps.forEach((s,i)=>{
+    s.classList.toggle('open', i===cur);
+    s.classList.toggle('active', i===cur);
+    s.classList.toggle('done', i<cur);
+  });
+}
+function wizOpen(i){
+  cur = i;
+  wizRender();
+}
+function wizNext(){
+  if(cur < steps.length-1){ cur++; wizRender(); }
+}
+function wizPrev(){
+  if(cur > 0){ cur--; wizRender(); }
+}
+function wizReset(){ cur = -1; wizRender(); }
+
+/* ===== 目录树 ===== */
+function treeToggle(i){
+  const n = document.querySelectorAll('.tree-node')[i];
+  n.classList.toggle('open');
+}
+
+/* ===== 即时问答 ===== */
+function iqAns(qidx, optIdx){
+  const box = document.getElementById('iq'+qidx);
+  const opts = box.querySelectorAll('.iq-opt');
+  if(opts[optIdx].classList.contains('locked')) return;
+  const answers = {
+    0: 1, 1: 2, 2: 1, 3: 2, 4: 1
+  };
+  opts.forEach(o=>o.classList.add('locked'));
+  opts[optIdx].classList.add(answers[qidx]===optIdx ? 'correct' : 'wrong');
+  opts[answers[qidx]].classList.add('correct');
+  box.classList.add('show-exp');
+  box.querySelector('.iq-exp.ok').style.display = (answers[qidx]===optIdx) ? 'block' : 'none';
+  box.querySelector('.iq-exp.no').style.display = (answers[qidx]===optIdx) ? 'none' : 'block';
+}
+</script>
+</body>
+</html>

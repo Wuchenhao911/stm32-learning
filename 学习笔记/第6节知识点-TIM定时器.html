@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第6节 知识点 · TIM 定时器（结构图精讲版）</title>
+<style>
+  :root{--bg:#eef3fb;--card:#fff;--primary:#2563eb;--accent:#0ea5e9;--text:#1e293b;--muted:#64748b;--line:#e2e8f0;
+    --code-bg:#0f172a;--code-text:#e2e8f0;--code-k:#93c5fd;--code-f:#86efac;--code-c:#94a3b8;--code-n:#fbbf24;
+    --green:#16a34a;--red:#dc2626;--warn-bg:#fff7ed;--warn-b:#f59e0b;--ok-bg:#ecfdf5;--ok-b:#10b981;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:0 0 60px}
+  header.hero{background:linear-gradient(120deg,#1d4ed8,#0ea5e9);color:#fff;padding:28px 24px 22px;text-align:center}
+  header.hero h1{font-size:24px;letter-spacing:1px;margin-bottom:6px}
+  header.hero p{opacity:.92;font-size:13.5px}
+  .container{max-width:920px;margin:0 auto;padding:0 16px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:18px 0 8px;position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:40;border-bottom:1px solid var(--line)}
+  .tab{cursor:pointer;border:none;background:#fff;border:1px solid var(--line);color:var(--muted);padding:8px 13px;border-radius:20px;font-size:13px;font-weight:600;transition:.2s}
+  .tab:hover{border-color:var(--accent);color:var(--accent)}
+  .tab.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 4px 12px rgba(37,99,235,.3)}
+  .panel{display:none;animation:fade .35s}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:14px 0;box-shadow:0 2px 10px rgba(15,23,42,.05);overflow:hidden}
+  .card-h{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none;font-weight:700;font-size:15.5px}
+  .card-h:hover{background:#f1f6ff}
+  .card-h .num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .card-h .arrow{margin-left:auto;transition:transform .3s;color:var(--muted)}
+  .card.open .card-h .arrow{transform:rotate(90deg)}
+  .card-b{max-height:0;overflow:hidden;transition:max-height .45s ease}
+  .card.open .card-b{max-height:3400px}
+  .card-b-inner{padding:4px 18px 20px}
+  h3.sec{font-size:15px;color:var(--primary);margin:14px 0 8px;padding-left:9px;border-left:4px solid var(--accent)}
+  ul,ol{margin:6px 0 6px 20px} li{margin:4px 0}
+  b{color:#0f172a} .muted{color:var(--muted);font-size:13px}
+  pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:13px 15px;overflow:auto;font-size:13px;line-height:1.6;margin:10px 0}
+  code{font-family:"SFMono-Regular",Consolas,monospace}
+  .c{color:var(--code-c)}.f{color:var(--code-f)}.k{color:var(--code-k)}.n{color:var(--code-n)}
+  .code-link{cursor:pointer;transition:.15s;border-radius:3px;padding:0 3px;display:inline-block}
+  .code-link:hover{background:#fde68a}
+  .code-link.active{background:#ef4444;color:#fff;box-shadow:0 0 0 3px rgba(239,68,68,.3)}
+  .note{border-radius:10px;padding:11px 13px;margin:11px 0;font-size:14px}
+  .note .t{font-weight:700;display:block;margin-bottom:3px}
+  .key{background:#eff6ff;border-left:4px solid var(--primary)}
+  .ok{background:var(--ok-bg);border-left:4px solid var(--ok-b)}
+  .danger{background:var(--warn-bg);border-left:4px solid var(--warn-b)}
+  .tip{position:relative;border-bottom:1px dashed var(--primary);color:var(--primary);cursor:help;font-weight:600}
+  .tip::after{content:attr(data-tip);position:absolute;left:50%;bottom:130%;transform:translateX(-50%) scale(.9);
+    background:#0f172a;color:#fff;font-size:12px;font-weight:400;line-height:1.5;width:max-content;max-width:240px;
+    padding:7px 10px;border-radius:7px;opacity:0;pointer-events:none;transition:.18s;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+  .tip:hover::after{opacity:1;transform:translateX(-50%) scale(1)}
+  .struct-wrap{background:linear-gradient(135deg,#f8faff,#eef5ff);border:2px solid var(--primary);border-radius:14px;padding:14px;margin:10px 0;position:relative;overflow:hidden}
+  .struct-wrap::before{content:"PPT 第 57 页 · 时基单元";position:absolute;top:6px;right:10px;background:var(--primary);color:#fff;font-size:11px;padding:3px 9px;border-radius:9px;font-weight:600}
+  .struct-svg{width:100%;height:auto;display:block}
+  .struct-svg .mod{cursor:pointer;transition:filter .2s;transform-box:fill-box;transform-origin:center}
+  .struct-svg .mod:hover{filter:drop-shadow(0 0 8px rgba(14,165,233,.7)) brightness(1.08)}
+  .struct-svg .mod.active{filter:drop-shadow(0 0 12px #ef4444) brightness(1.15)}
+  .struct-svg text{font-family:-apple-system,"Segoe UI",sans-serif;font-weight:600;pointer-events:none}
+  .struct-svg .wire{stroke:#475569;stroke-width:1.6;fill:none}
+  .struct-svg .clk-label{font-size:11px;fill:#0f172a;font-weight:700}
+  .struct-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .struct-info .item{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px}
+  .struct-info .item b{color:var(--primary);display:block;font-size:12px;margin-bottom:2px}
+  @media(max-width:640px){.struct-info{grid-template-columns:1fr}}
+  .var-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+  .var-box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px}
+  .var-box h4{color:var(--primary);margin-bottom:6px;font-size:14px}
+  .var-box .tag{display:inline-block;background:#dbeafe;color:#1d4ed8;font-size:10.5px;padding:1px 7px;border-radius:5px;font-weight:600;margin-right:4px}
+  .var-box ul{margin-left:16px}
+  @media(max-width:760px){.var-grid{grid-template-columns:1fr}}
+  .var-svg{width:100%;height:auto;background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:6px}
+  .calc{background:#f8fafc;border:1px dashed var(--line);border-radius:12px;padding:14px;margin:12px 0}
+  .calc .row{display:flex;align-items:center;gap:10px;margin:7px 0;flex-wrap:wrap}
+  .calc label{flex:0 0 86px;font-weight:600;font-size:13.5px}
+  .calc input[type=number]{width:120px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+  .calc .out{flex:1;min-width:160px;background:#0f172a;color:#a7f3d0;font-family:monospace;padding:8px 11px;border-radius:8px;font-size:13.5px}
+  .calc .out b{color:#fff}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+  th,td{border:1px solid var(--line);padding:8px 9px;text-align:left;vertical-align:top}
+  th{background:#f1f6ff;color:var(--primary);font-weight:700}
+  .quiz-q{background:#fff;border:1px solid var(--line);border-radius:11px;padding:14px;margin:12px 0;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+  .quiz-q .q{font-weight:700;margin-bottom:9px}
+  .quiz-q .q .tag{display:inline-block;background:#eff6ff;color:var(--primary);font-size:11px;padding:2px 7px;border-radius:5px;margin-right:7px;font-weight:600}
+  .opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#f8fafc;border-radius:8px;padding:9px 12px;margin:6px 0;cursor:pointer;font-size:13.5px;transition:.15s}
+  .opt:hover{border-color:var(--accent)}
+  .opt.correct{background:#ecfdf5;border-color:var(--green);color:#065f46}
+  .opt.wrong{background:#fef2f2;border-color:var(--red);color:#991b1b}
+  .opt .mk{font-weight:700;margin-right:7px}
+  .exp{font-size:12.5px;color:var(--muted);margin-top:7px;padding:8px 11px;background:#f8fafc;border-radius:7px;display:none}
+  .exp.show{display:block}
+  .fill-in{width:130px;padding:6px 9px;border:1px solid var(--line);border-radius:7px;font-size:13.5px}
+  .quiz-score{position:sticky;bottom:12px;background:var(--primary);color:#fff;text-align:center;padding:11px;border-radius:11px;font-weight:700;box-shadow:0 6px 18px rgba(37,99,235,.35);margin-top:16px}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>第6节 · TIM 定时器（结构图精讲版）</h1>
+  <p>江科大 STM32 入门教程 6-1 ~ 6-8 ｜ 围绕 PPT 第 57 页「时基单元」结构图讲透定时器</p>
+</header>
+
+<div class="container">
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-t="s57">🧭 57页结构图</button>
+    <button class="tab" data-t="link">🔗 代码↔结构</button>
+    <button class="tab" data-t="var">🔀 三大变体</button>
+    <button class="tab" data-t="type">📐 定时器类型</button>
+    <button class="tab" data-t="time">⏱ 时序与公式</button>
+    <button class="tab" data-t="other">📝 其他要点</button>
+    <button class="tab" data-t="qz">✅ 自测</button>
+  </div>
+
+  <div class="panel active" id="s57">
+    <div class="card open">
+      <div class="card-h"><span class="num">★</span> PPT 第 57 页「时基单元」结构图（点击模块看讲解） <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <p class="muted" style="margin-bottom:8px">下图根据 PPT 第 57 页「时基单元（定时中断基本结构）」重绘并扩展，<b>点任意模块高亮 + 在下方查看说明</b>。红色高亮表示「该模块由代码哪一行配置」。</p>
+        <div class="struct-wrap">
+          <svg class="struct-svg" viewBox="0 0 900 460" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+              </marker>
+            </defs>
+            <g class="mod" data-m="rcc" id="m-rcc">
+              <rect x="20" y="50" width="150" height="36" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+              <text x="95" y="73" text-anchor="middle" fill="#92400e" font-size="13">RCC 内部时钟</text>
+              <text x="170" y="73" fill="#92400e" font-size="10">CK_INT=72MHz</text>
+            </g>
+            <g class="mod" data-m="etr" id="m-etr">
+              <rect x="20" y="110" width="150" height="36" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+              <text x="95" y="133" text-anchor="middle" fill="#1e3a8a" font-size="13">ETR 外部时钟</text>
+            </g>
+            <g class="mod" data-m="itr" id="m-itr">
+              <rect x="20" y="170" width="150" height="36" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+              <text x="95" y="193" text-anchor="middle" fill="#1e3a8a" font-size="13">ITRx 其他定时器</text>
+            </g>
+            <g class="mod" data-m="tix" id="m-tix">
+              <rect x="20" y="230" width="150" height="36" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+              <text x="95" y="253" text-anchor="middle" fill="#1e3a8a" font-size="13">TIx 捕获通道</text>
+            </g>
+            <g class="mod" data-m="mux" id="m-mux">
+              <polygon points="220,55 220,260 300,210 300,105" fill="#e0e7ff" stroke="#4338ca" stroke-width="1.5"/>
+              <text x="245" y="135" text-anchor="middle" fill="#3730a3" font-size="11" font-weight="700">时钟源</text>
+              <text x="245" y="150" text-anchor="middle" fill="#3730a3" font-size="11" font-weight="700">选择器</text>
+            </g>
+            <g id="m-base">
+              <rect x="340" y="80" width="340" height="240" rx="10" fill="#f1f5f9" stroke="#0f172a" stroke-width="2" stroke-dasharray="4 3"/>
+              <rect x="340" y="80" width="340" height="26" fill="#0f172a" rx="10"/>
+              <text x="510" y="98" text-anchor="middle" fill="#fff" font-size="13">时 基 单 元</text>
+              <rect x="340" y="100" width="340" height="6" fill="#0f172a"/>
+            </g>
+            <g class="mod" data-m="psc" id="m-psc">
+              <rect x="380" y="200" width="100" height="44" rx="6" fill="#bbf7d0" stroke="#15803d" stroke-width="1.6"/>
+              <text x="430" y="219" text-anchor="middle" fill="#14532d" font-size="12.5">PSC</text>
+              <text x="430" y="235" text-anchor="middle" fill="#14532d" font-size="10">预分频器</text>
+            </g>
+            <g class="mod" data-m="cnt" id="m-cnt">
+              <rect x="540" y="200" width="100" height="44" rx="6" fill="#bbf7d0" stroke="#15803d" stroke-width="1.6"/>
+              <text x="590" y="219" text-anchor="middle" fill="#14532d" font-size="12.5">CNT</text>
+              <text x="590" y="235" text-anchor="middle" fill="#14532d" font-size="10">计数器 (+/-)</text>
+            </g>
+            <g class="mod" data-m="arr" id="m-arr">
+              <rect x="540" y="120" width="100" height="44" rx="6" fill="#fed7aa" stroke="#c2410c" stroke-width="1.6"/>
+              <text x="590" y="139" text-anchor="middle" fill="#7c2d12" font-size="12.5">ARR</text>
+              <text x="590" y="155" text-anchor="middle" fill="#7c2d12" font-size="10">自动重装器</text>
+            </g>
+            <path class="wire" d="M 590 165 L 590 198" marker-end="url(#arr)" marker-start="url(#arr)"/>
+            <text x="610" y="183" fill="#7c2d12" font-size="10">影子</text>
+            <path class="wire" d="M 480 222 L 540 222" marker-end="url(#arr)"/>
+            <text class="clk-label" x="510" y="216" text-anchor="middle">CK_CNT</text>
+            <path class="wire" d="M 300 158 L 360 222" marker-end="url(#arr)"/>
+            <text class="clk-label" x="335" y="183">CK_PSC</text>
+            <path class="wire" d="M 170 68 L 220 130"/>
+            <path class="wire" d="M 170 128 L 220 150"/>
+            <path class="wire" d="M 170 188 L 220 170"/>
+            <path class="wire" d="M 170 248 L 220 190"/>
+            <path class="wire" d="M 590 245 L 590 370" marker-end="url(#arr)" stroke-dasharray="3 3"/>
+            <text x="600" y="305" fill="#7c2d12" font-size="10">UEV</text>
+            <text x="600" y="318" fill="#7c2d12" font-size="10">更新事件</text>
+            <g class="mod" data-m="cen" id="m-cen">
+              <rect x="540" y="370" width="100" height="40" rx="6" fill="#fde68a" stroke="#a16207" stroke-width="1.6"/>
+              <text x="590" y="389" text-anchor="middle" fill="#713f12" font-size="12.5">运行控制</text>
+              <text x="590" y="404" text-anchor="middle" fill="#713f12" font-size="10">CEN 位</text>
+            </g>
+            <g class="mod" data-m="uie" id="m-uie">
+              <rect x="720" y="120" width="130" height="100" rx="8" fill="#e9d5ff" stroke="#7e22ce" stroke-width="1.6"/>
+              <text x="785" y="146" text-anchor="middle" fill="#581c87" font-size="12">中断输出</text>
+              <text x="785" y="163" text-anchor="middle" fill="#581c87" font-size="12">控制</text>
+              <text x="785" y="188" text-anchor="middle" fill="#7e22ce" font-size="10">(UIE 使能)</text>
+            </g>
+            <g class="mod" data-m="nvic" id="m-nvic">
+              <rect x="870" y="120" width="22" height="100" rx="3" fill="#0f172a" stroke="#0f172a"/>
+              <text x="881" y="165" text-anchor="middle" fill="#fff" font-size="10" transform="rotate(90 881 165)">NVIC</text>
+              <text x="881" y="200" text-anchor="middle" fill="#fff" font-size="10" transform="rotate(90 881 200)">→ CPU</text>
+            </g>
+            <path class="wire" d="M 640 142 L 720 160" marker-end="url(#arr)"/>
+            <text x="680" y="138" text-anchor="middle" fill="#581c87" font-size="10">UEV / U</text>
+            <path class="wire" d="M 850 170 L 870 170" marker-end="url(#arr)"/>
+            <path class="wire" d="M 540 390 L 480 390 L 480 244" stroke-dasharray="2 2" marker-end="url(#arr)"/>
+            <text x="463" y="320" fill="#713f12" font-size="9" text-anchor="middle">使能</text>
+            <text x="95" y="295" text-anchor="middle" fill="#64748b" font-size="10">（ETR 来自外部引脚）</text>
+            <text x="95" y="308" text-anchor="middle" fill="#64748b" font-size="10">（TIx 来自输入捕获通道）</text>
+            <text x="450" y="445" text-anchor="middle" fill="#64748b" font-size="10">信号流向：时钟源 → 选择器 → PSC 预分频 → CNT 计数 →(与 ARR 比较)→ 溢出 → 更新事件(UEV)→ 中断输出 → NVIC；CEN 运行控制使能整个 CNT</text>
+          </svg>
+        </div>
+        <div class="struct-info" id="structInfo">
+          <div class="item"><b>提示</b>请<strong>点上面任一模块</strong>（RCC/ETR/ITRx/TIx、选择器、PSC、CNT、ARR、运行控制 CEN、中断输出控制、NVIC）查看该模块的作用、对应代码与参数。</div>
+          <div class="item"><b>建议</b>看完结构图后，切到「代码↔结构」tab，<strong>点代码里的某一行</strong>，会高亮结构图上对应的模块；反过来点结构图模块也能高亮代码。</div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="card open">
+      <div class="card-h"><span class="num">①</span> 四大时钟源：定时器的"心跳"从哪来 <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <p>定时器是个计数器，但计数用的"脉冲"必须从某个时钟源来。F103 通用定时器（TIM2~4）有 <strong>4 种时钟源</strong>：</p>
+        <table>
+          <tr><th>时钟源</th><th>含义</th><th>典型应用</th><th>对应代码</th></tr>
+          <tr><td><b>RCC 内部时钟</b></td><td>CK_INT = 72MHz（最常用）</td><td>普通定时中断</td><td><code>TIM_InternalClockConfig(TIMx)</code></td></tr>
+          <tr><td><b>ETR 外部时钟</b></td><td>PA0 引脚输入的方波（时钟模式2）</td><td>外部信号当计数源</td><td><code>TIM_ETRClockMode2Config(...)</code></td></tr>
+          <tr><td><b>ITRx 其他定时器</b></td><td>用别的定时器的更新事件作计数源</td><td>定时器级联、扩时基</td><td>从模式相关配置</td></tr>
+          <tr><td><b>TIx 捕获通道</b></td><td>CH1/CH2 引脚输入（时钟模式1）</td><td>捕获通道边沿计数</td><td>从模式 + TI 选择</td></tr>
+        </table>
+        <div class="note key"><span class="t">结论</span>我们学 6-2 用的是 <strong>RCC 内部时钟</strong>，所以代码里只有一行 <code>TIM_InternalClockConfig(TIM2);</code>。其他三种是扩展玩法，结构图里"梯形选择器"就在干这件事 —— 选哪路作为 CK_PSC。</div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><span class="num">②</span> 预分频器 PSC：把时钟"降速" <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <p>72MHz 太快了（1 秒 7200 万次），根本用不上。PSC 把 72MHz <b>分频</b>后再送给 CNT。分频系数 = PSC+1。</p>
+        <ul>
+          <li>PSC 写 0 → 1 分频 → CK_CNT = 72MHz（不降速）</li>
+          <li>PSC 写 71 → 72 分频 → CK_CNT = <b>1MHz</b>（最常用，1µs 数一次）</li>
+          <li>PSC 写 7199 → 7200 分频 → CK_CNT = 10kHz</li>
+        </ul>
+        <div class="note key"><span class="t">为什么 +1</span>PSC 寄存器写 0~65535，对应 1~65536 分频。代码里写 <code>TIM_Prescaler = 7200-1</code> 表示 7200 分频 —— "<code>-1</code>" 不是减 1，是把"实际分频系数"翻译成"寄存器值"的固定写法。</div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><span class="num">③</span> 计数器 CNT 与自动重装器 ARR：溢出产生更新事件 <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <p>CNT 在 CK_CNT 的每个脉冲 <b>+1</b>（向上计数），数到 <b>ARR</b> 那个数就<b>溢出归零</b>，并产生一次<b>更新事件（UEV / U）</b>。</p>
+        <ul>
+          <li>ARR 写 9999 → CNT 走 0~9999 共 <b>10000</b> 次后溢出</li>
+          <li>影子寄存器：ARR 实际是有"预装载"的，修改 ARR 要等下一个 UEV 才生效（这就是 60/61 页"有/无预装时序"的差别，暂不深究）</li>
+        </ul>
+        <div class="note key"><span class="t">决定溢出频率</span>每秒钟溢出几次 = <b>CK_CNT / (ARR+1)</b>。再取倒数就是溢出周期（两次中断的间隔）。</div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><span class="num">④</span> 运行控制 CEN：忘了它，整个时基都不动 <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <p>结构图底部有个<strong>运行控制</strong>，对应 CR1 寄存器的 <b>CEN</b>（Counter Enable）位。CEN=0 时 CNT 停摆，再多脉冲也数不动。</p>
+        <pre><code><span class="f">TIM_Cmd</span>(TIM2, ENABLE);   <span class="c">// 内部就是 CR1.CEN = 1</span></code></pre>
+        <div class="note danger"><span class="t">第一大坑</span>代码配得全对，但忘了 <code>TIM_Cmd</code> —— 定时器不跑、看不到任何现象。<b>它是初始化最后一步</b>。</div>
+      </div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><span class="num">⑤</span> 中断输出控制 → NVIC：UEV 怎么送到 CPU <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <p>UEV（更新事件）有两个去向：</p>
+        <ul>
+          <li>直接送 <b>触发控制器</b>（去 DAC/ADC 或别的定时器）</li>
+          <li>经过<strong>中断输出控制</strong>（DIER.UIE = 1 时）→ 送到 <b>NVIC</b> → CPU 跳进中断服务函数</li>
+        </ul>
+        <pre><code><span class="f">TIM_ITConfig</span>(TIM2, TIM_IT_Update, ENABLE);   <span class="c">// 打开 UIE = 1（更新中断使能）</span>
+<span class="f">NVIC_Init</span>(...);                              <span class="c">// NVIC 通道使能，CPU 才能响应</span></code></pre>
+        <div class="note ok"><span class="t">三道闸门</span>UEV 要到达 CPU 必须<strong>三道闸门全开</strong>：<b>① UIE=1（中断使能） ② NVIC 通道使能 ③ 全局中断开关</b>（默认开，Cortex-M3 不需要再开）。任何一道忘了，中断不来。</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="link">
+    <div class="card open">
+      <div class="card-h"><span class="num">↔</span> 一行代码 = 结构图上一个模块 <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <p class="muted">把 <code>Timer_Init</code> 的每一行 <code style="background:#fde68a;padding:0 4px;border-radius:3px">点一下</code>，会高亮结构图上对应的模块；反过来，点结构图模块也能高亮对应代码。</p>
+        <pre><code><span class="k">void</span> <span class="f">Timer_Init</span>(<span class="k">void</span>)
+{
+    <span class="c">// ① 开 TIM2 时钟（APB1 总线）</span>
+    <span class="code-link" data-link="rcc">RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);</span>
+
+    <span class="c">// ② 选时钟源：RCC 内部 72MHz → 结构图最左侧 RCC → 选择器</span>
+    <span class="code-link" data-link="clk">TIM_InternalClockConfig(TIM2);</span>
+
+    <span class="c">// ③ 时基单元：PSC / ARR / 计数模式</span>
+    TIM_TimeBaseInitTypeDef TimeBaseInitStructure;
+    TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    TimeBaseInitStructure.TIM_CounterMode   = TIM_CounterMode_Up;
+    <span class="code-link" data-link="psc">TimeBaseInitStructure.TIM_Prescaler = 7200 - 1;</span>     <span class="c">// PSC 预分频</span>
+    <span class="code-link" data-link="arr">TimeBaseInitStructure.TIM_Period    = 10000 - 1;</span>    <span class="c">// ARR 自动重装</span>
+    TimeBaseInitStructure.TIM_RepetitionCounter = 0;
+    <span class="code-link" data-link="cnt">TIM_TimeBaseInit(TIM2, &amp;TimeBaseInitStructure);</span>     <span class="c">// 写进时基</span>
+
+    <span class="c">// ④ 打开更新中断：UIE=1（中断输出控制闸门）</span>
+    TIM_ClearFlag(TIM2, TIM_FLAG_Update);                  <span class="c">// 先清残留标志</span>
+    <span class="code-link" data-link="uie">TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);</span>
+
+    <span class="c">// ⑤ NVIC 通道使能（第二道闸门）</span>
+    <span class="code-link" data-link="nvic">NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+    NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&amp;NVIC_InitStructure);</span>
+
+    <span class="c">// ⑥ 启动定时器：CEN=1（运行控制）</span>
+    <span class="code-link" data-link="cen">TIM_Cmd(TIM2, ENABLE);</span>
+}
+
+<span class="c">// 中断服务函数（结构图最右侧 NVIC → CPU → 进这里）</span>
+<span class="k">void</span> <span class="f">TIM2_IRQHandler</span>(<span class="k">void</span>)
+{
+    <span class="k">if</span>(TIM_GetITStatus(TIM2, TIM_IT_Update) == SET){
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);   <span class="c">// 先清标志</span>
+        Num++;
+    }
+}</code></pre>
+        <div class="note ok"><span class="t">对应关系一句话</span>① RCC → ② InternalClockConfig → ③ PSC/ARR/TimeBaseInit → ④ TIM_ITConfig(UIE) → ⑤ NVIC_Init → ⑥ TIM_Cmd(CEN) —— <b>正好对应结构图从左到右走一遍</b>。</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="var">
+    <div class="card open">
+      <div class="card-h"><span class="num">🔀</span> 一个时基单元，三种玩法：PWM / 输入捕获 / 编码器接口 <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <p>这是 6 章最重要的<strong>统一视角</strong>：</p>
+        <div class="note key"><span class="t">核心结论</span>定时器<strong>四大功能共用同一个时基单元</strong>（PSC + CNT + ARR）。区别只在"捕获/比较通道"怎么用：</div>
+        <div class="var-grid">
+          <div class="var-box">
+            <h4>① 定时中断（基础）</h4>
+            <p>只用时基单元本身。CNT 溢出 → UEV → UIE → NVIC。</p>
+            <p><span class="tag">时基</span> <span class="tag">→ NVIC</span></p>
+          </div>
+          <div class="var-box">
+            <h4>② 输出比较 PWM（6-3/6-4）</h4>
+            <p>时基单元 + <b>输出比较单元</b>：CNT 与 CCR 比较 → REF → 极性选择/输出使能 → GPIO 输出 PWM。</p>
+            <p><span class="tag">时基</span><span class="tag">CCR</span><span class="tag">OC</span><span class="tag">GPIO</span></p>
+          </div>
+          <div class="var-box">
+            <h4>③ 输入捕获（6-5/6-6）</h4>
+            <p>时基单元 + <b>输入捕获单元</b>：GPIO → 滤波器 → 边沿检测 → CCR1 拍照；配合<b>从模式 Reset</b>自动清零 CNT。</p>
+            <p><span class="tag">时基</span><span class="tag">CCR1</span><span class="tag">从模式</span></p>
+          </div>
+          <div class="var-box">
+            <h4>④ 编码器接口（6-7/6-8）</h4>
+            <p>时基单元 + <b>编码器接口</b>：双路 GPIO → 滤波器 → 边沿检测 → 硬件正交解码 → CNT 自动加减。</p>
+            <p><span class="tag">时基</span><span class="tag">TI1+TI2</span><span class="tag">编码器模式</span></p>
+          </div>
+        </div>
+
+        <h3 class="sec">PPT 68 页：PWM 基本结构</h3>
+        <svg class="var-svg" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+            </marker>
+          </defs>
+          <rect x="40" y="20" width="600" height="180" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="340" y="42" text-anchor="middle" fill="#0f172a" font-size="12" font-weight="700">时 基 单 元</text>
+          <rect x="80" y="70" width="80" height="40" fill="#bbf7d0" stroke="#15803d"/><text x="120" y="95" text-anchor="middle" font-size="12" fill="#14532d">PSC</text>
+          <rect x="200" y="70" width="80" height="40" fill="#bbf7d0" stroke="#15803d"/><text x="240" y="95" text-anchor="middle" font-size="12" fill="#14532d">CNT</text>
+          <rect x="200" y="130" width="80" height="40" fill="#fed7aa" stroke="#c2410c"/><text x="240" y="155" text-anchor="middle" font-size="12" fill="#7c2d12">ARR</text>
+          <path d="M 160 90 L 200 90" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 240 110 L 240 130" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr2)" marker-start="url(#arr2)"/>
+          <rect x="340" y="60" width="160" height="100" fill="#e9d5ff" stroke="#7e22ce" stroke-width="1.5"/>
+          <text x="420" y="80" text-anchor="middle" font-size="12" fill="#581c87" font-weight="700">输出比较单元</text>
+          <text x="420" y="100" text-anchor="middle" font-size="11" fill="#581c87">CNT &lt; CCR → REF=有效</text>
+          <text x="420" y="116" text-anchor="middle" font-size="11" fill="#581c87">CNT ≥ CCR → REF=无效</text>
+          <text x="420" y="140" text-anchor="middle" font-size="10" fill="#7e22ce">（CCR 在内部，可调）</text>
+          <rect x="540" y="70" width="80" height="40" fill="#fde68a" stroke="#a16207"/>
+          <text x="580" y="94" text-anchor="middle" font-size="11" fill="#713f12">极性/使能</text>
+          <path d="M 500 110 L 540 95" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+          <rect x="660" y="70" width="60" height="40" fill="#0f172a"/>
+          <text x="690" y="94" text-anchor="middle" font-size="11" fill="#fff">GPIO</text>
+          <path d="M 620 90 L 660 90" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+          <text x="420" y="185" text-anchor="middle" fill="#64748b" font-size="10">CCR 越大 → 高电平越长 → 占空比 ↑ → LED 更亮/舵机角度更大</text>
+        </svg>
+
+        <h3 class="sec">PPT 78 页：输入捕获基本结构</h3>
+        <svg class="var-svg" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+            </marker>
+          </defs>
+          <rect x="350" y="20" width="420" height="180" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="560" y="42" text-anchor="middle" fill="#0f172a" font-size="12" font-weight="700">时 基 单 元</text>
+          <rect x="380" y="70" width="70" height="40" fill="#bbf7d0" stroke="#15803d"/><text x="415" y="95" text-anchor="middle" font-size="11" fill="#14532d">PSC</text>
+          <rect x="490" y="70" width="70" height="40" fill="#bbf7d0" stroke="#15803d"/><text x="525" y="95" text-anchor="middle" font-size="11" fill="#14532d">CNT</text>
+          <rect x="490" y="130" width="70" height="40" fill="#fed7aa" stroke="#c2410c"/><text x="525" y="155" text-anchor="middle" font-size="11" fill="#7c2d12">ARR</text>
+          <rect x="600" y="70" width="80" height="40" fill="#fecaca" stroke="#b91c1c"/><text x="640" y="94" text-anchor="middle" font-size="10" fill="#7f1d1d">CCR1</text>
+          <text x="640" y="125" text-anchor="middle" font-size="9" fill="#7f1d1d">捕获/比较</text>
+          <path d="M 450 90 L 490 90" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+          <path d="M 560 90 L 600 90" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+          <rect x="60" y="60" width="240" height="100" fill="#fde68a" stroke="#a16207" stroke-width="1.5"/>
+          <text x="180" y="80" text-anchor="middle" font-size="12" fill="#713f12" font-weight="700">输入捕获单元 1</text>
+          <rect x="80" y="95" width="60" height="22" fill="#fff" stroke="#a16207"/><text x="110" y="110" text-anchor="middle" font-size="10" fill="#713f12">滤波器</text>
+          <rect x="155" y="95" width="60" height="22" fill="#fff" stroke="#a16207"/><text x="185" y="110" text-anchor="middle" font-size="10" fill="#713f12">边沿检测</text>
+          <rect x="230" y="95" width="60" height="22" fill="#fff" stroke="#a16207"/><text x="260" y="110" text-anchor="middle" font-size="10" fill="#713f12">分频器</text>
+          <path d="M 290 105 L 360 90" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+          <text x="325" y="78" text-anchor="middle" font-size="9" fill="#0f172a">TI1FP1</text>
+          <rect x="20" y="95" width="30" height="22" fill="#0f172a"/><text x="35" y="110" text-anchor="middle" font-size="9" fill="#fff">GPIO</text>
+          <path d="M 50 106 L 80 106" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+          <rect x="180" y="170" width="200" height="22" fill="#e9d5ff" stroke="#7e22ce"/>
+          <text x="280" y="186" text-anchor="middle" font-size="10" fill="#581c87" font-weight="700">从模式：TI1FP1 上升沿 → Reset CNT</text>
+          <path d="M 290 138 L 290 170" stroke="#7e22ce" stroke-width="1.5" fill="none" stroke-dasharray="3 2" marker-end="url(#arr3)"/>
+          <text x="190" y="40" text-anchor="middle" font-size="10" fill="#7e22ce" font-weight="600">测频率 = 1MHz / CCR1</text>
+        </svg>
+
+        <h3 class="sec">PPT 82 页：编码器接口基本结构</h3>
+        <svg class="var-svg" viewBox="0 0 800 220" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+            </marker>
+          </defs>
+          <rect x="380" y="20" width="400" height="180" fill="#f1f5f9" stroke="#0f172a" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="580" y="42" text-anchor="middle" fill="#0f172a" font-size="12" font-weight="700">时 基 单 元</text>
+          <rect x="420" y="80" width="80" height="40" fill="#bbf7d0" stroke="#15803d"/><text x="460" y="105" text-anchor="middle" font-size="11" fill="#14532d">CNT (+/-)</text>
+          <rect x="540" y="80" width="80" height="40" fill="#fed7aa" stroke="#c2410c"/><text x="580" y="105" text-anchor="middle" font-size="11" fill="#7c2d12">ARR</text>
+          <path d="M 580 120 L 580 160" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr4)" marker-start="url(#arr4)"/>
+          <rect x="240" y="60" width="140" height="100" fill="#e9d5ff" stroke="#7e22ce" stroke-width="1.5"/>
+          <text x="310" y="80" text-anchor="middle" font-size="12" fill="#581c87" font-weight="700">编码器接口</text>
+          <text x="310" y="100" text-anchor="middle" font-size="9" fill="#581c87">硬件正交解码</text>
+          <text x="310" y="115" text-anchor="middle" font-size="9" fill="#581c87">自动判向 + 加减计数</text>
+          <text x="310" y="140" text-anchor="middle" font-size="9" fill="#7e22ce">TI12 → 4倍频</text>
+          <path d="M 380 110 L 420 100" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr4)"/>
+          <rect x="60" y="60" width="160" height="40" fill="#fde68a" stroke="#a16207"/>
+          <text x="140" y="84" text-anchor="middle" font-size="10" fill="#713f12">滤波器+边沿 (CH1)</text>
+          <text x="190" y="80" text-anchor="middle" font-size="9" fill="#713f12">TI1FP1</text>
+          <path d="M 220 80 L 240 95" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr4)"/>
+          <rect x="60" y="120" width="160" height="40" fill="#fde68a" stroke="#a16207"/>
+          <text x="140" y="144" text-anchor="middle" font-size="10" fill="#713f12">滤波器+边沿 (CH2)</text>
+          <text x="190" y="140" text-anchor="middle" font-size="9" fill="#713f12">TI2FP2</text>
+          <path d="M 220 140 L 240 125" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr4)"/>
+          <rect x="20" y="68" width="30" height="22" fill="#0f172a"/><text x="35" y="83" text-anchor="middle" font-size="9" fill="#fff">PA6</text>
+          <rect x="20" y="128" width="30" height="22" fill="#0f172a"/><text x="35" y="143" text-anchor="middle" font-size="9" fill="#fff">PA7</text>
+          <path d="M 50 79 L 60 80" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr4)"/>
+          <path d="M 50 139 L 60 140" stroke="#334155" stroke-width="1.5" fill="none" marker-end="url(#arr4)"/>
+          <text x="400" y="190" text-anchor="middle" font-size="10" fill="#64748b">正转 CNT++，反转 CNT--，CPU 只读 TIM_GetCounter()</text>
+        </svg>
+
+        <div class="note ok"><span class="t">统一记忆</span>四大功能 = <b>同一个时基单元</b> + <b>不同的通道用法</b>：定时中断啥也不加、PWM 加输出比较单元（CCR→极性→GPIO）、输入捕获加输入通道（滤波+边沿→CCR拍照+从模式Reset）、编码器加双路输入+硬件正交解码。</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="type">
+    <div class="card open">
+      <div class="card-h"><span class="num">📐</span> STM32F103C8T6 定时器类型（PPT 53-56 页） <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <table>
+          <tr><th>类型</th><th>F103C8T6 资源</th><th>特点</th><th>我们用</th></tr>
+          <tr><td><b>高级控制定时器</b></td><td>TIM1（无 TIM8）</td><td>互补输出、死区、刹车 —— 电机/电源专用</td><td>本次不学</td></tr>
+          <tr><td><b>通用定时器</b> ★</td><td>TIM2 / TIM3 / TIM4</td><td>4 路捕获/比较通道，<b>本节主角</b></td><td>✓</td></tr>
+          <tr><td><b>基本定时器</b></td><td>（C8T6 没有）</td><td>只有时基+触发 DAC，功能最简</td><td>本节不学</td></tr>
+        </table>
+        <p class="muted">三张完整框图已提取到本地：高级=PPT 54、通用=PPT 55、基本=PPT 56。它们就是 57 页简化结构图的"完整版本"，加上了输入通道、触发控制器、编码器接口等。理解 57 页之后，回头看完整框图会豁然开朗。</p>
+        <div class="note key"><span class="t">总线分布（避坑）</span><b>TIM2/3/4 挂在 APB1</b>（开时钟用 <code>RCC_APB1PeriphClockCmd</code>）；<b>TIM1 挂在 APB2</b>（用 <code>RCC_APB2PeriphClockCmd</code>）。写错总线 = 寄存器写不进 = 定时器不工作。</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="time">
+    <div class="card open">
+      <div class="card-h"><span class="num">⏱</span> 核心公式与时序（PPT 58-61 页） <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <h3 class="sec">必背公式（PPT 69 页参数计算）</h3>
+        <div class="note key"><span class="t">三行写定</span>
+        <b>CK_CNT = 72MHz / (PSC + 1)</b><br>
+        <b>Freq_OV = CK_CNT / (ARR + 1) = 72MHz / ((PSC+1)(ARR+1))</b><br>
+        <b>T_OV = 1 / Freq_OV = (PSC+1)(ARR+1) / 72MHz</b>
+        </div>
+
+        <div class="calc">
+          <div class="row"><label>预分频 PSC</label><input type="number" id="cpsc" value="7199"><span class="muted">填寄存器写入值（=分频系数-1），如 7200-1=7199</span></div>
+          <div class="row"><label>重装 ARR</label><input type="number" id="carr" value="9999"><span class="muted">填寄存器写入值，如 10000-1=9999</span></div>
+          <div class="row"><label>计算结果</label><div class="out" id="cout">—</div></div>
+        </div>
+
+        <h3 class="sec">PPT 58 页：预分频器时序（理解 PSC）</h3>
+        <p>PSC 是 16 位计数器：每来一个 CK_PSC 脉冲 PSC+1，数到 PSC（写入值）就归零并输出一个 CK_CNT 脉冲。所以"写 N" = "N+1 分频"。</p>
+        <ul>
+          <li>第一次预分频的"前 N 个"脉冲不计数（PPT 58 图的"缓冲"段），从第 N+1 个开始</li>
+          <li>PSC 修改后也要等下一轮才生效（缓冲机制）</li>
+        </ul>
+
+        <h3 class="sec">PPT 60/61 页：计数器无预装 vs 有预装</h3>
+        <ul>
+          <li><b>无预装</b>：直接写 CNT 立即生效（PPT 60）</li>
+          <li><b>有预装（影子寄存器）</b>：写 ARR/PSC 立即进"预装载寄存器"，要等下一次 UEV 才同步到影子（PPT 61）—— 这样可以避免中途改 ARR 导致周期错乱</li>
+        </ul>
+        <div class="note ok"><span class="t">结论</span>平时我们不需要主动管预装，使用库函数 <code>TIM_TimeBaseInit</code> 默认就是带预装的。如果要立即生效，用 <code>TIM_PrescalerConfig</code> + <code>TIM_PSCReloadMode_Immediate</code>。</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="other">
+    <div class="card open">
+      <div class="card-h"><span class="num">📝</span> 其他要点（坑、技巧、口诀） <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <h3 class="sec">3 个亲身踩过的坑</h3>
+        <table>
+          <tr><th>坑</th><th>症状</th><th>正解</th></tr>
+          <tr><td>时钟开错总线（TIM2 写 APB2）</td><td>寄存器写不进，定时器不工作</td><td>TIM2~4 用 APB1，TIM1 用 APB2</td></tr>
+          <tr><td>忘 <code>TIM_Cmd(TIM2, ENABLE)</code></td><td>配得全对但定时器不跑</td><td>初始化最后必须开 CEN</td></tr>
+          <tr><td>忘 <code>TIM_InternalClockConfig</code></td><td>默认用不上外部时钟，时基不计数</td><td>用内部时钟时显式选一下更稳</td></tr>
+        </table>
+
+        <h3 class="sec">面试一句话 / 标准答法</h3>
+        <ul>
+          <li><b>定时器是什么</b>：硬件计数器，<b>对输入时钟计数，达到设定值时触发中断或事件</b>。</li>
+          <li><b>比软件 Delay 好在哪</b>：<b>不占 CPU</b>，定时期间 CPU 可干别的。</li>
+          <li><b>四大功能统一记忆</b>：共用时基单元，区别在通道用法（OC / IC / Encoder）。</li>
+          <li><b>如何用 TIM 测频率</b>：输入捕获 + 从模式 Reset，<b>Freq = 1MHz / CCR1</b>（前提是 PSC=71 让计数频率为 1MHz）。</li>
+          <li><b>编码器接口优势</b>：硬件正交解码，<b>不丢脉冲、不占 CPU</b>，比 EXTI 软件方案可靠。</li>
+        </ul>
+
+        <h3 class="sec">速背口诀</h3>
+        <div class="note key"><span class="t">六句口诀（按 57 页从左到右）</span>
+        <b>① RCC 开时钟</b>（APB1 勿错）→ <b>② 选源 InternalClock</b>（默认 RCC 内部）→ <b>③ TimeBaseInit 写 PSC+ARR</b>（算好溢出时间）→ <b>④ TIM_ITConfig 开 UIE</b>（中断闸门）→ <b>⑤ NVIC_Init 通道使能</b>（CPU 闸门）→ <b>⑥ TIM_Cmd 开 CEN</b>（最后一步忘就跑不动）
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="qz">
+    <div class="card open">
+      <div class="card-h"><span class="num">✓</span> 交互式自测 <span class="arrow">▶</span></div>
+      <div class="card-b"><div class="card-b-inner">
+        <div id="quiz"></div>
+        <div class="quiz-score" id="score">已答 0 / 共 0 题 ｜ 得分 —</div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const tabs=document.querySelectorAll('.tab'), panels=document.querySelectorAll('.panel');
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));panels.forEach(p=>p.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.t).classList.add('active');});
+document.querySelectorAll('.card-h').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('open'));
+
+document.querySelectorAll('.tip').forEach(t=>{t.addEventListener('click',e=>{const d=document.createElement('div');d.textContent=t.dataset.tip;d.style.cssText='position:fixed;left:'+e.clientX+'px;top:'+(e.clientY-10)+'px;transform:translate(-50%,-100%);background:#0f172a;color:#fff;padding:7px 10px;border-radius:7px;font-size:12px;max-width:240px;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,.3)';document.body.appendChild(d);setTimeout(()=>d.remove(),1800);});});
+
+const structData={
+  rcc:{t:'RCC 内部时钟',d:'CK_INT = 72MHz，最常用的时钟源。代码对应：RCC_APB1PeriphClockCmd 开 TIM 时钟（给 TIM 本身开总线时钟），TIM_InternalClockConfig 选源。'},
+  clk:{t:'时钟源选择器',d:'梯形多路复用器，从 4 路时钟里选一路作为 CK_PSC。'},
+  etr:{t:'ETR 外部时钟',d:'PA0 等引脚输入的方波作为计数源（时钟模式2）。需要外部精准计时（如测外部传感器频率）时用。'},
+  itr:{t:'ITRx 其他定时器',d:'用别的定时器的更新事件（UEV）作为本定时器的计数源 —— 可做定时器级联、扩时基。'},
+  tix:{t:'TIx 捕获通道',d:'从 CH1/CH2 引脚输入的信号作时钟源（时钟模式1），边沿触发计数。'},
+  mux:{t:'时钟源选择器',d:'4 选 1，决定哪路作为 CK_PSC。库函数配置示例：TIM_InternalClockConfig(TIM2)。'},
+  psc:{t:'PSC 预分频器',d:'对输入时钟分频。CK_CNT = CK_PSC / (PSC+1)。写 7199 = 7200 分频，72MHz→10kHz。代码：TIM_Prescaler = 7200-1。'},
+  cnt:{t:'CNT 计数器',d:'每个 CK_CNT 脉冲 +1（向上计数），数到 ARR 溢出归零。可选中央对齐、加减计数。代码：TIM_TimeBaseInit 写进寄存器。'},
+  arr:{t:'ARR 自动重装器',d:'CNT 的溢出阈值。CNT 数到 ARR 就归零并产生更新事件 UEV。带影子寄存器（预装），修改 ARR 要等下次 UEV 生效。代码：TIM_Period = 10000-1。'},
+  uie:{t:'中断输出控制',d:'决定 UEV 能否送到 NVIC。UIE=1 时打开。代码：TIM_ITConfig(TIMx, TIM_IT_Update, ENABLE)。'},
+  nvic:{t:'NVIC',d:'嵌套向量中断控制器，把中断请求送给 CPU，跳进 TIM2_IRQHandler。代码：NVIC_Init + 中断服务函数。'},
+  cen:{t:'运行控制 CEN',d:'CR1 寄存器的 Counter Enable 位。CEN=0 时 CNT 停摆。代码：TIM_Cmd(TIM2, ENABLE)。初始化最后一步。'}
+};
+const structSvg=document.querySelector('.struct-svg');
+const infoBox=document.getElementById('structInfo');
+function clearAct(){document.querySelectorAll('.struct-svg .mod.active, .code-link.active').forEach(x=>x.classList.remove('active'));}
+function linkToCode(key){
+  const map={rcc:'① RCC_APB1PeriphClockCmd 开 TIM2 时钟',clk:'② TIM_InternalClockConfig(TIM2) 选内部 72MHz',psc:'TimeBaseInitStructure.TIM_Prescaler = 7200-1',arr:'TimeBaseInitStructure.TIM_Period = 10000-1',cnt:'TIM_TimeBaseInit(TIM2, &结构体) 写进时基',uie:'TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE)',nvic:'NVIC_Init 使能 TIM2_IRQn 通道',cen:'TIM_Cmd(TIM2, ENABLE) — 最后一步'};
+  return '<code>'+(map[key]||'—')+'</code>';
+}
+function showInfo(key){
+  const d=structData[key]; if(!d) return;
+  infoBox.innerHTML='<div class="item"><b>'+d.t+'</b>'+d.d+'</div><div class="item"><b>代码对应</b>'+linkToCode(key)+'</div>';
+}
+document.querySelectorAll('.struct-svg .mod').forEach(g=>{
+  g.addEventListener('click',()=>{
+    const key=g.dataset.m;
+    clearAct(); g.classList.add('active');
+    showInfo(key);
+    const link=document.querySelector('.code-link[data-link="'+key+'"]');
+    if(link){link.classList.add('active');link.scrollIntoView({behavior:'smooth',block:'center'});}
+  });
+});
+document.querySelectorAll('.code-link').forEach(c=>{
+  c.addEventListener('click',()=>{
+    const key=c.dataset.link;
+    clearAct(); c.classList.add('active');
+    const g=document.getElementById('m-'+key);
+    if(g) g.classList.add('active');
+    showInfo(key);
+  });
+});
+
+const cpsc=document.getElementById('cpsc'),carr=document.getElementById('carr'),cout=document.getElementById('cout');
+function calc(){
+  const p=+cpsc.value, a=+carr.value;
+  if(!p||!a){cout.innerHTML='请输入 PSC 和 ARR';return;}
+  const f=72e6/p, T=(p*a)/72e6, ov=1/T;
+  cout.innerHTML='CK_CNT = <b>'+(f/1e3).toFixed(2)+' kHz</b> ｜ T_OV = <b>'+(T*1000).toFixed(3)+' ms</b> ｜ Freq_OV = <b>'+ov.toFixed(2)+' Hz</b>';
+}
+cpsc.oninput=calc;carr.oninput=calc;calc();
+
+const quizData=[
+  {type:'c',tag:'结构图',q:'PPT 57 页时基单元结构图中，从 PSC 预分频器出来的时钟叫什么？',opts:['CK_PSC','CK_CNT','CK_INT','TIM_CLK'],ans:1,exp:'CK_PSC 是分频器输入（72MHz），CK_CNT 是分频器输出（送给 CNT）。'},
+  {type:'c',tag:'总线',q:'TIM2、TIM3、TIM4 挂在哪个总线？',opts:['APB2(72MHz)','APB1(36MHz)','AHB','都挂 APB2'],ans:1,exp:'通用定时器 TIM2~5 挂 APB1；只有 TIM1/8 高级定时器挂 APB2。'},
+  {type:'c',tag:'公式',q:'PSC=7199、ARR=9999 时的溢出周期约是？',opts:['1ms','10ms','1s','10s'],ans:2,exp:'T=(7199+1)(9999+1)/72MHz = 7200×10000/72M = 1秒。'},
+  {type:'c',tag:'坑',q:'结构图中"忘了它定时器不跑"的模块是？',opts:['PSC','ARR','CEN（运行控制）','NVIC'],ans:2,exp:'运行控制 CEN 对应 TIM_Cmd，是初始化最后一步。漏了它定时器不计数。'},
+  {type:'c',tag:'统一',q:'关于定时器四大功能，下面哪句正确？',opts:['它们各自有独立的时基单元','它们共用同一时基单元，区别在通道用法','只有 PWM 用时基','只有编码器用时基'],ans:1,exp:'定时中断/PWM/输入捕获/编码器接口都共用同一时基单元（PSC+CNT+ARR），区别只是通道用法。'},
+  {type:'c',tag:'ARR',q:'ARR 带影子寄存器的目的是？',opts:['提高计数精度','修改 ARR 不会在周期中途生效，避免错乱','减少功耗','加快速度'],ans:1,exp:'有预装时，写 ARR 进预装载寄存器，下一次 UEV 才同步到影子，避免周期内切换产生异常。'},
+  {type:'c',tag:'NVIC',q:'UEV 要到达 CPU，必须打开哪两个闸门？',opts:['CEN 和 PSC','UIE（中断使能）和 NVIC 通道使能','ARR 和 CNT','TIM_Cmd 和 NVIC'],ans:1,exp:'UIE=1（TIM_ITConfig）+ NVIC 通道使能（NVIC_Init）。Cortex-M3 默认全局中断是开的。'},
+  {type:'c',tag:'PWM',q:'在 PWM 基本结构（PPT 68）中，REF 信号来自？',opts:['PSC','CNT 与 CCR 比较结果','ARR','GPIO'],ans:1,exp:'输出比较单元里 CNT 和 CCR 比较，决定 REF 的有效/无效电平，再经极性/使能到 GPIO。'},
+  {type:'c',tag:'IC',q:'输入捕获测频率时，从模式 Reset 的作用是？',opts:['复位整个 TIM 模块','捕获到上升沿自动清零 CNT，避免手动算差值','关闭中断','切换时钟源'],ans:1,exp:'从模式 Reset 配合 TI1FP1 触发：上升沿自动把 CNT 清零，CCR1 直接就是"一个周期的计数"，硬件自动连续测。'},
+  {type:'c',tag:'编码器',q:'TIM_EncoderMode_TI12 表示？',opts:['只用 CH1 一个通道','CH1 和 CH2 双沿都计数（4 倍频）','CH1 和 CH2 单沿计数（2 倍频）','关闭编码器'],ans:1,exp:'TI12 = TI1+TI2 双沿都触发 = 4 倍频。TI1 = 仅 CH1 计数；TI2 = 仅 CH2 计数。'},
+  {type:'f',tag:'填空',q:'定时器溢出时间公式的分母是 ____ MHz。',ans:['72'],exp:'F103 系统时钟 72MHz。'},
+  {type:'f',tag:'填空',q:'结构图最右侧、把中断请求送给 CPU 的是 ____ 。',ans:['nvic'],exp:'NVIC（嵌套向量中断控制器）是中断送到 CPU 的最后一道闸门。'},
+  {type:'f',tag:'填空',q:'控制 CNT 是否计数的位叫 ____ 位（写 TIM_Cmd 就在操作它）。',ans:['cen'],exp:'CR1.CEN = Counter Enable。TIM_Cmd(x, ENABLE) = 置 CEN=1。'},
+  {type:'f',tag:'填空',q:'PWM 的占空比由 ____ 寄存器决定（填 3 个字母）。',ans:['ccr'],exp:'占空比 = CCR / ARR，CCR 是比较/捕获寄存器。'}
+];
+const quizEl=document.getElementById('quiz');let answered=0,score=0;
+quizData.forEach(item=>{
+  const qd=document.createElement('div');qd.className='quiz-q';
+  if(item.type==='c'){
+    qd.innerHTML='<div class="q"><span class="tag">'+item.tag+'</span>'+item.q+'</div>'+item.opts.map((o,oi)=>'<button class="opt" data-oi="'+oi+'"><span class="mk">'+String.fromCharCode(65+oi)+'</span>'+o+'</button>').join('')+'<div class="exp"></div>';
+    qd.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
+      if(qd.dataset.done)return;qd.dataset.done='1';answered++;
+      const oi=+btn.dataset.oi,exp=qd.querySelector('.exp');
+      if(oi===item.ans){btn.classList.add('correct');score++;exp.innerHTML='✅ 正确！'+item.exp;}
+      else{btn.classList.add('wrong');qd.querySelectorAll('.opt')[item.ans].classList.add('correct');exp.innerHTML='❌ 错。正确答案 '+String.fromCharCode(65+item.ans)+'。'+item.exp;}
+      exp.classList.add('show');updateScore();
+    });
+  }else{
+    qd.innerHTML='<div class="q"><span class="tag">'+item.tag+'</span>'+item.q+'</div><input class="fill-in" placeholder="输入答案"><button class="btn btn-p" style="margin-left:6px">检查</button><div class="exp"></div>';
+    const inp=qd.querySelector('.fill-in'),btn=qd.querySelector('.btn'),exp=qd.querySelector('.exp');
+    btn.onclick=()=>{if(qd.dataset.done)return;const v=inp.value.trim().toLowerCase();if(item.ans.includes(v)){qd.dataset.done='1';answered++;score++;exp.innerHTML='✅ 正确！'+item.exp;exp.classList.add('show');btn.style.background='var(--green)';updateScore();}else{exp.innerHTML='❌ 再想想。'+item.exp;exp.classList.add('show');}};
+  }
+  quizEl.appendChild(qd);
+});
+function updateScore(){document.getElementById('score').textContent='已答 '+answered+' / 共 '+quizData.length+' 题 ｜ 得分 '+score+' / '+quizData.length;}
+updateScore();
+</script>
+</body>
+</html>

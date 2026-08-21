@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXTI 中断 · 代码与知识点结合训练</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --border:#e2e8f0;
+    --text:#1e293b; --muted:#64748b;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --green:#059669; --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --orange:#d97706; --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --red:#dc2626; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.8;padding:24px 16px;}
+  .wrap{max-width:960px;margin:0 auto;}
+
+  .hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:24px 28px;margin-bottom:20px;}
+  .hero h1{font-size:24px;margin-bottom:4px;}
+  .hero .sub{opacity:.9;font-size:13px;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;}
+  .card-head{padding:12px 22px;background:var(--blue-bg);border-bottom:1px solid var(--border);font-weight:600;color:var(--blue);font-size:15px;display:flex;align-items:center;gap:10px;}
+  .card-head .num{background:var(--blue);color:#fff;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .card-body{padding:18px 22px;}
+  h4{margin:12px 0 6px;font-size:14px;}
+  p{margin:5px 0;}
+
+  /* ===== 代码区 ===== */
+  .code-panel{display:flex;gap:14px;margin:10px 0;align-items:stretch;flex-wrap:wrap;}
+  .code-wrap{flex:1;min-width:320px;}
+  .code-line{display:flex;gap:10px;align-items:flex-start;cursor:pointer;border-radius:6px;padding:1px 8px;transition:background .15s;border-left:3px solid transparent;}
+  .code-line:hover{background:#1e293b;}
+  .code-line.sel{background:#1e3a8a;border-left-color:#38bdf8;}
+  .code-line .ln{color:#475569;font-family:Consolas,monospace;font-size:12px;width:26px;text-align:right;flex-shrink:0;user-select:none;}
+  .code-line .tx{color:#cbd5e1;font-family:Consolas,monospace;font-size:13px;white-space:pre;}
+  .code-line .tx .c{color:#64748b;}
+  .code-line .tx .k{color:#93c5fd;}
+  .code-line .tx .f{color:#fbbf24;}
+  .code-line .tx .n{color:#6ee7b7;}
+  .explain-box{width:280px;flex-shrink:0;background:#f8fafc;border:1.5px dashed var(--border);border-radius:10px;padding:14px 16px;font-size:13px;min-height:200px;align-self:stretch;}
+  .explain-box .t{font-weight:700;color:var(--blue);font-size:13.5px;margin-bottom:6px;display:block;}
+  .explain-box .e{margin-top:8px;}
+  .explain-box .reg{background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:6px;padding:6px 10px;font-size:12px;margin-top:8px;}
+  .explain-box .reg b{color:#1e3a8a;}
+
+  /* ===== 选择题 ===== */
+  .q-box{margin:14px 0;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:#f8fafc;}
+  .q-q{font-weight:600;font-size:14px;margin-bottom:10px;}
+  .q-q .tag{font-size:11px;font-weight:700;padding:1px 10px;border-radius:10px;margin-right:8px;}
+  .tag-code{background:var(--blue-bg);color:var(--blue);}
+  .tag-use{background:var(--purple-bg);color:var(--purple);}
+  .q-code{background:var(--code-bg);color:var(--code-text);border-radius:8px;padding:10px 14px;font-family:Consolas,monospace;font-size:12.5px;margin:8px 0;line-height:1.6;}
+  .q-opts{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .q-opt{display:block;padding:9px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;font-size:13.5px;transition:all .2s;background:#fff;}
+  .q-opt:hover{border-color:var(--blue);background:var(--blue-bg);}
+  .q-opt.correct{border-color:var(--green);background:var(--green-bg);color:#065f46;font-weight:600;}
+  .q-opt.wrong{border-color:var(--red);background:var(--red-bg);color:#991b1b;}
+  .q-opt.locked{cursor:default;opacity:.85;}
+  .q-exp{display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-size:13px;}
+  .q-exp.show{display:block;}
+  .q-exp.ok{background:var(--green-bg);border:1px solid var(--green-bd);color:#065f46;}
+  .q-exp.no{background:var(--red-bg);border:1px solid var(--red-bd);color:#991b1b;}
+
+  /* ===== 找错 ===== */
+  .bug-line{display:flex;gap:10px;align-items:flex-start;cursor:pointer;border-radius:6px;padding:1px 8px;border-left:3px solid transparent;}
+  .bug-line:hover{background:#f1f5f9;}
+  .bug-line.ok{border-left-color:var(--green);background:var(--green-bg);}
+  .bug-line.bad{border-left-color:var(--red);background:var(--red-bg);}
+  .bug-line .ln{color:#94a3b8;font-family:Consolas,monospace;font-size:12px;width:26px;text-align:right;flex-shrink:0;}
+  .bug-line .tx{color:#334155;font-family:Consolas,monospace;font-size:13px;white-space:pre;}
+
+  .btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#1d4ed8;}
+  .btn-ghost{background:#eef2f7;color:var(--text);}
+  .btn-ghost:hover{background:#e2e8f0;}
+
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>EXTI 中断 · 代码与知识点结合训练</h1>
+    <div class="sub">以你的 1005 编码器工程真实代码为例 · 点击代码行看对应原理 · 四种交互训练</div>
+  </div>
+
+  <!-- ========== 1. 代码逐行剖析 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">1</div>逐行剖析：Encoder_Init 的每一行在配什么（点击代码行）</div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--muted)">点击左侧代码任意一行，右边显示它对应的知识点。完整读一遍，建立"代码 ↔ 寄存器/原理"的对应关系。</p>
+      <div class="code-panel">
+        <div class="code-wrap" id="code-full"></div>
+        <div class="explain-box">
+          <span class="t" id="exp-title">👆 点击左侧代码行</span>
+          <div id="exp-body" style="color:var(--muted)">每一行代码背后都有对应的硬件原理。从第 1 行开始点吧。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 2. 代码 → 用途（正向匹配） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">2</div>代码 → 用途（给代码，选它干什么）</div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--muted)">下面每段代码对应一个用途，点击选择，立刻看对错。</p>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-code">代码</span>下面这段代码的作用是什么？</div>
+        <div class="q-code">RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);</div>
+        <div class="q-opts" id="q0">
+          <div class="q-opt" data-ok="1">打开 GPIOB 和 AFIO 的时钟（外设时钟门控）</div>
+          <div class="q-opt" data-ok="0">配置 GPIOB 引脚为推挽输出</div>
+          <div class="q-opt" data-ok="0">使能 EXTI 中断响应</div>
+          <div class="q-opt" data-ok="0">配置 NVIC 优先级分组</div>
+        </div>
+        <div class="q-exp" id="e0"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-code">代码</span>下面这段代码的作用是什么？</div>
+        <div class="q-code">GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);</div>
+        <div class="q-opts" id="q1">
+          <div class="q-opt" data-ok="1">把 PB0 引脚映射到 EXTI_Line0（AFIO 中断引脚选择）</div>
+          <div class="q-opt" data-ok="0">把 EXTI_Line0 映射到 NVIC 中断通道</div>
+          <div class="q-opt" data-ok="0">配置 PB0 为下拉输入</div>
+          <div class="q-opt" data-ok="0">配置 EXTI 的触发方式为下降沿</div>
+        </div>
+        <div class="q-exp" id="e1"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-code">代码</span>下面这段代码的作用是什么？</div>
+        <div class="q-code">EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;</div>
+        <div class="q-opts" id="q2">
+          <div class="q-opt" data-ok="1">配置 EXTI 边沿检测方式：下降沿触发（信号从高变低）</div>
+          <div class="q-opt" data-ok="0">配置 GPIO 引脚的翻转速度</div>
+          <div class="q-opt" data-ok="0">把引脚配置为上拉输入</div>
+          <div class="q-opt" data-ok="0">配置中断响应的优先级</div>
+        </div>
+        <div class="q-exp" id="e2"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-code">代码</span>下面这段代码的作用是什么？</div>
+        <div class="q-code">NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;</div>
+        <div class="q-opts" id="q3">
+          <div class="q-opt" data-ok="1">选择要使能的中断通道：EXTI0 对应的 NVIC 中断号</div>
+          <div class="q-opt" data-ok="0">把 PB0 引脚配置为 EXTI 线 0</div>
+          <div class="q-opt" data-ok="0">配置 EXTI 边沿触发方式</div>
+          <div class="q-opt" data-ok="0">打开 AFIO 时钟</div>
+        </div>
+        <div class="q-exp" id="e3"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-code">代码</span>下面这段代码的作用是什么？</div>
+        <div class="q-code">EXTI_ClearITPendingBit(EXTI_Line0);</div>
+        <div class="q-opts" id="q4">
+          <div class="q-opt" data-ok="1">清除 EXTI0 的中断挂起标志（防止反复触发）</div>
+          <div class="q-opt" data-ok="0">判断 EXTI0 是否发生了中断</div>
+          <div class="q-opt" data-ok="0">使能 EXTI0 中断请求</div>
+          <div class="q-opt" data-ok="0">把 EXTI0 中断标志置 1</div>
+        </div>
+        <div class="q-exp" id="e4"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-code">代码</span>下面这段代码的作用是什么？</div>
+        <div class="q-code">while (GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_1) == 1);</div>
+        <div class="q-opts" id="q5">
+          <div class="q-opt" data-ok="1">阻塞等待 PB1 变为低电平（用于按键/编码器松手检测）</div>
+          <div class="q-opt" data-ok="0">把 PB1 配置为输入模式</div>
+          <div class="q-opt" data-ok="0">触发 PB1 的外部中断</div>
+          <div class="q-opt" data-ok="0">清除 PB1 的中断标志</div>
+        </div>
+        <div class="q-exp" id="e5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 3. 用途 → 代码（反向匹配） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">3</div>用途 → 代码（给需求，选正确的代码）</div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--muted)">反过来考：要实现某个功能，该写哪句？</p>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-use">用途</span>想配置 EXTI 的触发方式为「下降沿触发」，应该写？</div>
+        <div class="q-opts" id="r0">
+          <div class="q-opt" data-ok="0">GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;</div>
+          <div class="q-opt" data-ok="1">EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;</div>
+          <div class="q-opt" data-ok="0">NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;</div>
+          <div class="q-opt" data-ok="0">TIM_Cmd(TIM2, ENABLE);</div>
+        </div>
+        <div class="q-exp" id="re0"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-use">用途</span>想把 PB14 引脚接到 EXTI 线 14 上，应该写？</div>
+        <div class="q-opts" id="r1">
+          <div class="q-opt" data-ok="0">EXTI_InitStructure.EXTI_Line = EXTI_Line14;</div>
+          <div class="q-opt" data-ok="0">NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;</div>
+          <div class="q-opt" data-ok="1">GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource14);</div>
+          <div class="q-opt" data-ok="0">RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);</div>
+        </div>
+        <div class="q-exp" id="re1"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-use">用途</span>想让 GPIOA 的推挽输出引脚 PA4 输出低电平，应该写？</div>
+        <div class="q-opts" id="r2">
+          <div class="q-opt" data-ok="0">GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_4);</div>
+          <div class="q-opt" data-ok="1">GPIO_ResetBits(GPIOA, GPIO_Pin_4);</div>
+          <div class="q-opt" data-ok="0">GPIO_SetBits(GPIOA, GPIO_Pin_4);</div>
+          <div class="q-opt" data-ok="0">GPIO_WriteBit(GPIOA, GPIO_Pin_4, Bit_SET);</div>
+        </div>
+        <div class="q-exp" id="re2"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-use">用途</span>在中断服务函数开头，想确认是不是 EXTI_Line14 触发了这次中断，应该写？</div>
+        <div class="q-opts" id="r3">
+          <div class="q-opt" data-ok="1">if (EXTI_GetITStatus(EXTI_Line14) == SET)</div>
+          <div class="q-opt" data-ok="0">EXTI_ClearITPendingBit(EXTI_Line14);</div>
+          <div class="q-opt" data-ok="0">GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_14);</div>
+          <div class="q-opt" data-ok="0">TIM_GetITStatus(TIM2, TIM_IT_Update);</div>
+        </div>
+        <div class="q-exp" id="re3"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-use">用途</span>想让 PB0 的 EXTI 中断有「抢占优先级 1、响应优先级 2」，应该写？</div>
+        <div class="q-opts" id="r4">
+          <div class="q-opt" data-ok="0">EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;</div>
+          <div class="q-opt" data-ok="1">NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;<br>NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;</div>
+          <div class="q-opt" data-ok="0">NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);</div>
+          <div class="q-opt" data-ok="0">GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;</div>
+        </div>
+        <div class="q-exp" id="re4"></div>
+      </div>
+
+      <div class="q-box">
+        <div class="q-q"><span class="tag tag-use">用途</span>中断里处理完了，想让 CPU 不再认为这个中断"还在挂起"，应该写？</div>
+        <div class="q-opts" id="r5">
+          <div class="q-opt" data-ok="1">EXTI_ClearITPendingBit(EXTI_Line0);</div>
+          <div class="q-opt" data-ok="0">EXTI_GetITStatus(EXTI_Line0);</div>
+          <div class="q-opt" data-ok="0">NVIC_Init(&amp;NVIC_InitStructure);</div>
+          <div class="q-opt" data-ok="0">GPIO_SetBits(GPIOB, GPIO_Pin_0);</div>
+        </div>
+        <div class="q-exp" id="re5"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 4. 找错题 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">4</div>代码找错（点击你认为有问题的行）</div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--muted)">下面这段代码有 <b>2 处致命错误</b>（会导致中断完全失效）。点击错误行，看看能不能找全。</p>
+      <div id="bug-code" style="background:#f8fafc;border:1.5px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;line-height:1.9;"></div>
+      <div style="margin-top:12px" class="status" id="bug-status">点击你认为有错的行（可多点几次）</div>
+      <div class="q-exp" id="bug-result"></div>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="bugReveal()">揭晓答案</button>
+    </div>
+  </div>
+
+  <!-- ========== 5. 记忆锚点 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">★</div>总结：函数 ↔ 硬件模块 对照表（背下来）</div>
+    <div class="card-body">
+      <table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px">
+        <tr style="background:var(--blue-bg)"><th style="padding:8px 12px;border:1px solid var(--border);text-align:left">硬件模块</th><th style="padding:8px 12px;border:1px solid var(--border);text-align:left">配置函数 / 代码</th><th style="padding:8px 12px;border:1px solid var(--border);text-align:left">对应寄存器（了解即可）</th></tr>
+        <tr><td style="padding:8px 12px;border:1px solid var(--border)"><b>时钟门控</b></td><td style="padding:8px 12px;border:1px solid var(--border)"><code>RCC_APB2PeriphClockCmd(..., ENABLE)</code></td><td style="padding:8px 12px;border:1px solid var(--border)">RCC_APB2ENR（开外设时钟）</td></tr>
+        <tr><td style="padding:8px 12px;border:1px solid var(--border)"><b>GPIO 模式</b></td><td style="padding:8px 12px;border:1px solid var(--border)"><code>GPIO_Init(端口, &amp;结构体)</code></td><td style="padding:8px 12px;border:1px solid var(--border)">GPIOx_CRL/CRH（配置模式速度）</td></tr>
+        <tr><td style="padding:8px 12px;border:1px solid var(--border)"><b>引脚→EXTI 映射</b></td><td style="padding:8px 12px;border:1px solid var(--border)"><code>GPIO_EXTILineConfig(端口源, 引脚源)</code></td><td style="padding:8px 12px;border:1px solid var(--border)">AFIO_EXTICR1~4（选哪根 GPIO）</td></tr>
+        <tr><td style="padding:8px 12px;border:1px solid var(--border)"><b>边沿检测</b></td><td style="padding:8px 12px;border:1px solid var(--border)"><code>EXTI_Init(&amp;结构体)</code> 配 Trigger</td><td style="padding:8px 12px;border:1px solid var(--border)">EXTI_RTSR/ FTSR（上升/下降沿）</td></tr>
+        <tr><td style="padding:8px 12px;border:1px solid var(--border)"><b>中断屏蔽</b></td><td style="padding:8px 12px;border:1px solid var(--border)"><code>EXTI_LineCmd = ENABLE</code></td><td style="padding:8px 12px;border:1px solid var(--border)">EXTI_IMR（屏蔽寄存器）</td></tr>
+        <tr><td style="padding:8px 12px;border:1px solid var(--border)"><b>NVIC 使能/优先级</b></td><td style="padding:8px 12px;border:1px solid var(--border)"><code>NVIC_Init(&amp;结构体)</code></td><td style="padding:8px 12px;border:1px solid var(--border)">NVIC_ISER/ NVIC_IPR</td></tr>
+        <tr><td style="padding:8px 12px;border:1px solid var(--border)"><b>判断标志</b></td><td style="padding:8px 12px;border:1px solid var(--border)"><code>EXTI_GetITStatus(线)</code></td><td style="padding:8px 12px;border:1px solid var(--border)">EXTI_PR（挂起寄存器）</td></tr>
+        <tr><td style="padding:8px 12px;border:1px solid var(--border)"><b>清除标志</b></td><td style="padding:8px 12px;border:1px solid var(--border)"><code>EXTI_ClearITPendingBit(线)</code></td><td style="padding:8px 12px;border:1px solid var(--border)">EXTI_PR 写 1 清除</td></tr>
+      </table>
+      <div class="note ok" style="background:var(--green-bg);border:1px solid var(--green-bd);border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13.5px">
+        <b>一条主线</b>：每段配置代码 = 在设置一个硬件模块的寄存器。配置顺序就是信号流经的顺序：<br>
+        <b>GPIO(CRL/CRH) → AFIO(EXTICR) → EXTI(RTSR/FTSR/IMR) → NVIC(ISER/IPR)</b>，中断发生后再读/清 <b>EXTI_PR</b>。
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">EXTI 代码训练 · 江科大 STM32 入门教程 · 全部答对 = 中断代码彻底掌握</div>
+</div>
+
+<script>
+/* ========== 1. 代码逐行剖析 ========== */
+const codeLines = [
+  {t:'RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB|RCC_APB2Periph_AFIO, ENABLE);',
+   t2:'开时钟：GPIOB + AFIO',
+   reg:'RCC_APB2ENR',
+   exp:'STM32 默认关掉所有外设时钟（省电）。这行打开 <b>GPIOB</b> 的时钟让引脚能用，同时打开 <b>AFIO</b> 的时钟——因为后面的 <code>GPIO_EXTILineConfig</code> 是重映射功能，归 AFIO 管。<b>AFIO 时钟忘了开，中断就静默失效</b>（你 1005 踩过的坑）。'},
+  {t:'GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;',
+   t2:'配 GPIO 模式：上拉输入',
+   reg:'GPIOB_CRL（CNF/MODE 位）',
+   exp:'PB0/PB1 配置为 <b>上拉输入</b>：不按时默认高电平 1，被拉低时读到 0。编码器信号默认高，所以用 IPU。<b>不是输出模式</b>——输入模式才能"看"外部电平变化。'},
+  {t:'GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;',
+   t2:'选引脚：PB0 和 PB1',
+   reg:'GPIOB_CRL 对应位',
+   exp:'一次配置两个引脚。结构体 <code>GPIO_Pin</code> 是"哪些引脚"的位掩码，<code>GPIO_Pin_0|GPIO_Pin_1</code> = 第 0、1 位都为 1 → 同时配置 PB0 和 PB1。'},
+  {t:'GPIO_Init(GPIOB, &GPIO_InitStructure);',
+   t2:'执行初始化：写入寄存器',
+   reg:'GPIOB_CRL',
+   exp:'把结构体里的配置（模式/速度/引脚）<b>真正写进 GPIOB 的寄存器</b>。这就是"配置生效"的一步。端口参数 GPIOB 决定写哪组寄存器。'},
+  {t:'GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);',
+   t2:'引脚→EXTI 映射：PB0 → EXTI0',
+   reg:'AFIO_EXTICR1（EXTI0 对应的 4 位）',
+   exp:'告诉硬件：<b>EXTI_Line0 这根线，接的是 GPIOB 的第 0 脚</b>（而不是 PA0/PC0…）。16 个 EXTI 线，每个都能从 16 个引脚的"同名脚"里选一个。这就是 AFIO 的"中断引脚选择"功能。'},
+  {t:'EXTI_InitStructure.EXTI_Line = EXTI_Line0 | EXTI_Line1;',
+   t2:'选 EXTI 线：Line0 + Line1',
+   reg:'EXTI_IMR（屏蔽寄存器）',
+   exp:'指定要操作哪几条 EXTI 线（0 和 1）。后面配置的触发方式、使能开关，都对这两条线生效。'},
+  {t:'EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;',
+   t2:'触发方式：下降沿',
+   reg:'EXTI_FTSR（下降沿触发选择）',
+   exp:'<b>下降沿触发</b>：信号从高变低的瞬间产生一次中断请求。编码器转一格，A 相产生一个下降沿 → 触发一次。<b>上升沿</b>在 RTSR 寄存器，<b>双边沿</b>是两个都使能。'},
+  {t:'EXTI_InitStructure.EXTI_LineCmd = ENABLE;',
+   t2:'使能 EXTI 中断请求',
+   reg:'EXTI_IMR（中断屏蔽寄存器）',
+   exp:'把 Line0/1 的"中断屏蔽"打开，允许它们向 NVIC 发请求。等于给 EXTI 这层"报警器"通电——<b>不 ENABLE 的话，边沿检测到了也不会上报</b>。'},
+  {t:'EXTI_Init(&EXTI_InitStructure);',
+   t2:'执行 EXTI 初始化',
+   reg:'EXTI_FTSR / EXTI_IMR 等',
+   exp:'把结构体配置（线、触发、使能）写进 EXTI 的寄存器。<b>到这里 EXTI 层配置完成</b>——但 CPU 还不会响应，因为 NVIC 层还没开。'},
+  {t:'NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);',
+   t2:'优先级分组：Group 2',
+   reg:'AIRCR（应用中断复位控制寄存器）',
+   exp:'决定 4 位优先级怎么分：Group 2 = <b>2 位抢占（0~3）+ 2 位响应（0~3）</b>。<b>全工程只能调一次</b>，重复调会乱。通常放 main 开头或某个 Init 里一次。'},
+  {t:'NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;',
+   t2:'选中断通道：EXTI0',
+   reg:'NVIC_ISER（中断使能寄存器）',
+   exp:'EXTI_Line0 对应中断号 <code>EXTI0_IRQn</code>。<b>注意：EXTI0~4 各有一个独立中断号；5~9 共用 EXTI9_5_IRQn；10~15 共用 EXTI15_10_IRQn</b>。选错通道 = 中断不来。'},
+  {t:'NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;',
+   t2:'使能 NVIC 通道',
+   reg:'NVIC_ISER',
+   exp:'把 EXTI0 这个中断在 NVIC 层"使能"。<b>EXIT 层使能 + NVIC 层使能，两层都开 CPU 才会响应</b>。'},
+  {t:'NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;',
+   t2:'抢占优先级 = 1',
+   reg:'NVIC_IPR（优先级寄存器）',
+   exp:'抢占优先级 1（数字小优先）。<b>高抢占能打断正在执行的低抢占中断</b>。这里设为 1，表示它比较"重要"，能打断抢占为 2 的中断。'},
+  {t:'NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;',
+   t2:'响应优先级 = 1',
+   reg:'NVIC_IPR',
+   exp:'响应优先级 1。只在<b>抢占相同</b>时才比较；且响应优先级<b>不能打断</b>，只决定排队顺序。'},
+  {t:'NVIC_Init(&NVIC_InitStructure);',
+   t2:'执行 NVIC 初始化',
+   reg:'NVIC_ISER / NVIC_IPR',
+   exp:'把通道、使能、优先级写进 NVIC 寄存器。<b>到这里中断链路全部配置完成</b>：GPIO → AFIO → EXTI → NVIC 全部打通。'},
+  {t:'void EXTI0_IRQHandler(void) { if(EXTI_GetITStatus(EXTI_Line0)==SET){ EXTI_ClearITPendingBit(EXTI_Line0); ... } }',
+   t2:'中断服务函数',
+   reg:'EXTI_PR（挂起寄存器）',
+   exp:'<b>中断来了 CPU 跳到这个函数</b>。① 先 <code>EXTI_GetITStatus</code> 判断是不是 Line0 触发的（共用 Handler 时必须区分）；② <code>EXTI_ClearITPendingBit</code> 清标志（不清 = 一直触发死循环）；③ 处理逻辑（读 B 相判方向、计数 ±1）。<b>函数名必须和启动文件注册的名字一致</b>。'},
+];
+function renderCode(){
+  const box = document.getElementById('code-full');
+  box.innerHTML = '';
+  codeLines.forEach((l,i)=>{
+    const d = document.createElement('div');
+    d.className = 'code-line';
+    d.dataset.i = i;
+    d.innerHTML = '<span class="ln">'+(i+1)+'</span><span class="tx">' + l.t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+    d.onclick = ()=>selCode(i);
+    box.appendChild(d);
+  });
+}
+function selCode(i){
+  document.querySelectorAll('.code-line').forEach(el=>el.classList.remove('sel'));
+  document.querySelectorAll('.code-line')[i].classList.add('sel');
+  const l = codeLines[i];
+  document.getElementById('exp-title').textContent = '步骤 '+(i+1)+' · '+l.t2;
+  document.getElementById('exp-body').innerHTML = l.exp;
+}
+renderCode();
+
+/* ========== 2&3. 选择题 ========== */
+const exps = {
+  q0:{ok:'✓ 对！这是第一步：开 GPIOB + AFIO 时钟。', no:'✗ 错。这是开时钟（RCC 门控），不是配模式/使能中断。AFIO 时钟是 EXTI 映射的前提。'},
+  q1:{ok:'✓ 对！GPIO_EXTILineConfig 就是 AFIO 的"中断引脚选择"：PB0 → EXTI_Line0。', no:'✗ 错。它做的是"引脚映射到 EXTI 线"，属于 AFIO 功能，不是配触发、不是使能 NVIC。'},
+  q2:{ok:'✓ 对！EXTI_Trigger_Falling = 下降沿触发（信号高→低的瞬间触发）。', no:'✗ 错。这是配置 EXTI 边沿检测的触发方式，对应 EXTI_FTSR 寄存器。'},
+  q3:{ok:'✓ 对！NVIC_IRQChannel 选择中断通道号，EXTI0_IRQn 对应 EXTI_Line0。', no:'✗ 错。这是 NVIC 层选通道，不是 GPIO/AFIO 层的配置。'},
+  q4:{ok:'✓ 对！清挂起标志 = 告诉 CPU"处理完了"。不清会反复触发。', no:'✗ 错。这是清标志（写 EXTI_PR 对应位），判断标志用的是 EXTI_GetITStatus。'},
+  q5:{ok:'✓ 对！while 阻塞等 PB1 变低——松手检测/等待信号跳变。', no:'✗ 错。这是读取 GPIO 输入电平并阻塞等待，不是配置或触发中断。'},
+  r0:{ok:'✓ 对！触发方式就是 EXTI_InitStructure.EXTI_Trigger 字段。', no:'✗ 错。IPU 是 GPIO 模式，NVIC_IRQChannel 是选中断通道，TIM_Cmd 是定时器。下降沿 = EXTI_Trigger_Falling。'},
+  r1:{ok:'✓ 对！引脚→EXTI 线的映射就是 GPIO_EXTILineConfig（AFIO 功能）。', no:'✗ 错。EXTI_Line 是"选哪条线"，映射"引脚到线"才是 GPIO_EXTILineConfig。'},
+  r2:{ok:'✓ 对！输出低电平 = GPIO_ResetBits（Reset=清零=低）。', no:'✗ 错。ReadInputDataBit 是读输入；SetBits 是输出高；WriteBit+Bit_SET 也是输出高。输出低用 ResetBits。'},
+  r3:{ok:'✓ 对！判断是否触发 = EXTI_GetITStatus(线) == SET。', no:'✗ 错。ClearITPendingBit 是清标志，不是判断；读 GPIO 电平不等于读中断标志。'},
+  r4:{ok:'✓ 对！抢占/响应优先级就是 NVIC_InitStructure 的两个字段。', no:'✗ 错。Falling 是 EXTI 触发方式；PriorityGroupConfig 是分组（不是具体数值）；GPIO_Speed 是引脚速度。'},
+  r5:{ok:'✓ 对！清挂起标志 = EXTI_ClearITPendingBit。', no:'✗ 错。GetITStatus 是判断；NVIC_Init 是配置；GPIO_SetBits 是输出电平。清标志就是 ClearITPendingBit。'},
+};
+function bindQ(id, key){
+  const box = document.getElementById(id);
+  box.querySelectorAll('.q-opt').forEach(opt=>{
+    opt.onclick = ()=>{
+      if(opt.classList.contains('locked')) return;
+      box.querySelectorAll('.q-opt').forEach(o=>o.classList.add('locked'));
+      const ok = +opt.dataset.ok === 1;
+      opt.classList.add(ok?'correct':'wrong');
+      const exp = document.getElementById('e'+id.slice(1));
+      const ex = exps[key];
+      exp.className = 'q-exp show '+(ok?'ok':'no');
+      exp.innerHTML = ok ? ex.ok : ex.no;
+    };
+  });
+}
+['q0','q1','q2','q3','q4','q5','r0','r1','r2','r3','r4','r5'].forEach(id=>bindQ(id,id));
+
+/* ========== 4. 找错 ========== */
+const bugCode = [
+  {t:'void Encoder_Init(void){', bad:0},
+  {t:'  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);', bad:1, why:'❌ 漏开 AFIO 时钟！GPIO_EXTILineConfig 需要 AFIO 时钟，不开则映射失败，中断永不触发。应改为 RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO'},
+  {t:'  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;', bad:0},
+  {t:'  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0|GPIO_Pin_1;', bad:0},
+  {t:'  GPIO_Init(GPIOB, &GPIO_InitStructure);', bad:0},
+  {t:'  GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);', bad:0},
+  {t:'  EXTI_InitStructure.EXTI_Line = EXTI_Line0|EXTI_Line1;', bad:0},
+  {t:'  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;', bad:0, why:'（提示：这不是致命错，但和编码器实际信号不匹配，可不计）'},
+  {t:'  EXTI_InitStructure.EXTI_LineCmd = ENABLE;', bad:0},
+  {t:'  EXTI_Init(&EXTI_InitStructure);', bad:0},
+  {t:'  NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;', bad:0},
+  {t:'  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;', bad:0},
+  {t:'  NVIC_Init(&NVIC_InitStructure);', bad:0},
+  {t:'}', bad:0},
+  {t:'void EXTI0_IRQHandler(void){', bad:0},
+  {t:'  EXTI_ClearITPendingBit(EXTI_Line0);', bad:1, why:'❌ 少了 EXTI_GetITStatus 判断！共用/多线时必须先判断是哪个线触发；且如果多条线共用此函数，必须逐个判断。正确写法：if(EXTI_GetITStatus(EXTI_Line0)==SET){ EXTI_ClearITPendingBit(...); }'},
+  {t:'  if(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_1)==0){ count--; }', bad:0},
+  {t:'}', bad:0},
+];
+function renderBug(){
+  const box = document.getElementById('bug-code');
+  box.innerHTML = '';
+  bugCode.forEach((l,i)=>{
+    const d = document.createElement('div');
+    d.className = 'bug-line';
+    d.dataset.i = i;
+    d.innerHTML = '<span class="ln">'+i+'</span><span class="tx">'+l.t.replace(/</g,'&lt;')+'</span>';
+    d.onclick = ()=>bugPick(i);
+    box.appendChild(d);
+  });
+}
+const bugAns = [1, 15];
+const picked = new Set();
+function bugPick(i){
+  if(picked.has(i)) { picked.delete(i); } else { picked.add(i); }
+  renderBugState();
+}
+function renderBugState(){
+  const lines = document.querySelectorAll('.bug-line');
+  const st = document.getElementById('bug-status');
+  lines.forEach((el,i)=>{
+    el.classList.remove('ok','bad');
+    if(picked.has(i)) el.classList.add(bugAns.includes(i)?'ok':'bad');
+  });
+  const wrong = [...picked].filter(i=>!bugAns.includes(i)).length;
+  const right = [...picked].filter(i=>bugAns.includes(i)).length;
+  st.innerHTML = '已标记 '+picked.size+' 行 · 正确 '+right+' / 2' + (wrong?' · 还有 '+wrong+' 行标记错了（红=错行）':'');
+}
+function bugReveal(){
+  const lines = document.querySelectorAll('.bug-line');
+  bugAns.forEach(i=>lines[i].classList.add('ok'));
+  const res = document.getElementById('bug-result');
+  let html = '<b>答案揭晓（2 处致命错误）：</b><br>';
+  bugAns.forEach(i=>{
+    html += bugCode[i].why + '<br>';
+  });
+  html += '<br><b>其余行都是对的。</b>关键点：第 1 行漏 AFIO 时钟、ISR 里漏判断标志——两个都是"编译不报错但中断失效"的典型。';
+  res.className = 'q-exp show ok';
+  res.innerHTML = html;
+}
+renderBug();
+</script>
+</body>
+</html>

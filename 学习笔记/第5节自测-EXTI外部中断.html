@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>第 5 节自测 · EXTI 外部中断</title>
+<script>
+MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\(', '\)']],
+    displayMath: [['$$', '$$'], ['\[', '\]']]
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<style>
+/* === ExamPass Shared Styles === */
+/* Paper-like warm background, clean typography, responsive */
+
+:root {
+  --paper: #fdf6e3;
+  --paper-dark: #f5ecd7;
+  --ink: #2c2c2c;
+  --ink-light: #555;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --divider: #d6c8a8;
+  --card-bg: #fef9ef;
+  --card-border: #e8dcc8;
+  --correct: #22c55e;
+  --correct-bg: #f0fdf4;
+  --wrong: #ef4444;
+  --wrong-bg: #fef2f2;
+  --tag-bg: #fef3c7;
+  --tag-text: #92400e;
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: "Microsoft YaHei", "Noto Sans SC", "SimSun", sans-serif;
+  font-size: 12pt; line-height: 1.75; color: var(--ink);
+  max-width: 860px; margin: auto; padding: 24px 20px 60px;
+  background: var(--paper);
+}
+
+@media print {
+  body { font-size: 10.5pt; background: #fff; }
+  .no-print { display: none !important; }
+  h1, h2, h3 { page-break-after: avoid; }
+}
+
+/* ── Header ── */
+#exampass-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 6px 0; margin-bottom: 0;
+}
+.header-brand { font-size: 1.2em; font-weight: 700; color: #1a1a2e; letter-spacing: 0.3px; }
+.header-url  { font-size: 0.78em; color: #999; }
+.header-divider { border: none; border-top: 2px solid var(--divider); margin: 4px 0 20px 0; }
+
+/* ── Typography ── */
+h1 { font-size: 1.55em; text-align: center; border-bottom: 2px solid var(--divider); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 1.25em; border-bottom: 1px solid var(--divider); padding-bottom: 4px; margin-top: 28px; }
+h3 { font-size: 1.08em; margin-top: 20px; color: var(--ink); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Tables ── */
+table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.95em; }
+td, th { border: 1px solid var(--card-border); padding: 5px 9px; text-align: left; }
+th { background: var(--paper-dark); font-weight: 700; }
+
+/* ── Knowledge point vs explanation ── */
+.kp { font-weight: 700; color: var(--ink); }           /* key point: bold dark */
+.exp { font-weight: 400; color: var(--ink-light); }    /* explanation: lighter */
+.exp em, .exp strong { color: var(--ink); }             /* emphasis inside explanation */
+
+/* ── Block elements ── */
+blockquote {
+  border-left: 3px solid #c0392b; background: #fef9ef;
+  padding: 6px 14px; margin: 10px 0; font-size: 0.95em;
+}
+code { background: #f0ede0; padding: 2px 5px; border-radius: 3px; font-size: 0.92em; }
+pre { background: #f0ede0; padding: 10px; border-radius: var(--radius); overflow-x: auto; }
+
+/* ── TOC ── */
+div.toc {
+  background: var(--card-bg); padding: 14px 18px;
+  border: 1px solid var(--card-border); border-radius: var(--radius); margin-bottom: 22px;
+}
+div.toc ul { padding-left: 18px; }
+div.toc li { margin: 3px 0; font-size: 0.95em; }
+
+/* ── Priority tags ── */
+.tag-must   { background: #fee2e2; color: #991b1b; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-key    { background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-freq   { background: #dbeafe; color: #1e40af; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+.tag-info   { background: #f0fdf4; color: #166534; padding: 1px 6px; border-radius: 3px; font-size: 0.82em; font-weight: 600; }
+
+/* === Interactive Test Styles === */
+
+/* ── Score box ── */
+#score-box {
+  display: none; background: var(--paper-dark); color: var(--ink);
+  padding: 16px 20px; border-radius: var(--radius); margin: 14px 0;
+  text-align: center; border: 1px solid var(--card-border);
+}
+#score-box .score-num { font-size: 2.2em; font-weight: 700; }
+#score-box .score-label { font-size: 0.85em; color: var(--ink-light); }
+
+/* ── Question card ── */
+.q-card {
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: var(--radius); padding: 12px 14px; margin: 10px 0;
+  transition: all 0.15s;
+}
+.q-card.correct { border-left: 3px solid var(--correct); background: #f7fdf4; }
+.q-card.wrong   { border-left: 3px solid var(--wrong); background: #fef9f9; }
+
+.q-num  { font-weight: 700; font-size: 0.98em; margin-bottom: 4px; }
+.q-text { margin-bottom: 8px; font-size: 0.98em; }
+
+/* ── Options (compact) ── */
+.option {
+  display: block; padding: 4px 10px; margin: 3px 0;
+  border: 1px solid var(--card-border); border-radius: 4px;
+  cursor: pointer; transition: all 0.12s; font-size: 0.93em;
+  background: #fefcf5;
+}
+.option:hover            { background: #f0ede0; }
+.option input            { margin-right: 6px; }
+.option.selected         { border-color: var(--accent); background: #eff6ff; }
+.option.correct-answer   { border-color: var(--correct); background: var(--correct-bg); }
+.option.wrong-answer     { border-color: var(--wrong); background: var(--wrong-bg); }
+
+/* ── Textareas (compact) ── */
+.q-textarea {
+  width: 100%; min-height: 56px; border: 1px solid var(--card-border);
+  border-radius: 4px; padding: 6px 10px; font-family: inherit;
+  font-size: 0.93em; background: #fefcf5; resize: vertical;
+}
+.q-textarea:focus { outline: none; border-color: var(--accent); }
+.q-code {
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 0.88em; line-height: 1.5; background: #1e1e2e; color: #e0e0e0;
+  tab-size: 4; white-space: pre;
+}
+.q-code:focus { border-color: var(--accent); }
+
+/* ── Partial-credit badge ── */
+.badge-partial { background: #fef3c7; color: #92400e; }
+.q-card.partial { border-color: #f59e0b; }
+
+/* ── Result after grading ── */
+.result {
+  display: none; margin-top: 8px; padding: 8px 12px;
+  background: #fefcf5; border: 1px solid var(--card-border);
+  border-radius: 4px; font-size: 0.9em; line-height: 1.6;
+}
+.result .badge {
+  display: inline-block; padding: 1px 9px; border-radius: 3px;
+  font-weight: 700; font-size: 0.82em; margin-right: 6px;
+}
+.badge-ok  { background: var(--correct-bg); color: #166534; }
+.badge-no  { background: var(--wrong-bg); color: #991b1b; }
+.badge-ref { background: #dbeafe; color: #1e40af; }
+
+.result .explanation { margin-top: 4px; color: var(--ink); }
+.result .pitfall { color: #b45309; margin-top: 3px; font-size: 0.9em; }
+
+/* ── Grading button ── */
+.grading-bar { text-align: center; margin: 20px 0; }
+.grading-bar button {
+  font-size: 1em; padding: 8px 32px; background: var(--accent);
+  color: #fff; border: none; border-radius: var(--radius);
+  cursor: pointer; font-weight: 600; letter-spacing: 0.3px;
+}
+.grading-bar button:hover     { background: var(--accent-hover); }
+.grading-bar button:disabled  { background: #bbb; cursor: not-allowed; }
+
+</style>
+</head>
+<body>
+
+<header id="exampass-header">
+  <div class="header-left"><span class="header-brand">ExamPass Assistant</span></div>
+  <div class="header-right"><span class="header-url">github.com/WUBING2023/ExamPass-Assistant</span></div>
+</header>
+<hr class="header-divider">
+
+<h1>第 5 节自测 · EXTI 外部中断</h1>
+<h2 style="text-align:center">章节测试</h2>
+<p style="text-align:center;color:var(--ink-light);font-size:0.95em">江科大 P11-P12 · 8 选择 + 2 多选 + 5 判断 + 4 填空 + 2 简答 + 1 综合 · 满分 100</p>
+
+<div id="score-box"><div class="score-num" id="score-num">0</div><div class="score-label">总分</div></div>
+<div id="questions-container"></div>
+<div class="grading-bar no-print"><button onclick="gradeAll()" id="grade-btn">提交批改</button></div>
+
+<script>
+var Q = [{"type": "choice", "points": 4, "question": "中断处理流程中，以下哪一步是由硬件自动完成、用户不需要写代码的？", "options": ["保护现场（寄存器压栈）和恢复现场（出栈）", "编写中断服务函数 ISR 的内容", "判断中断标志位并清除标志", "配置 NVIC 的抢占/响应优先级"], "answer": 0, "explanation": "保护/恢复现场是 CPU 硬件自动做的（压栈/出栈），用户只需写 ISR 函数体。判断标志、清标志、配 NVIC 都是用户代码。", "pitfall": "易误以为压栈也要自己写——那是硬件行为。"}, {"type": "choice", "points": 4, "question": "中断 A（抢占 1）正在执行时，中断 B（抢占 0）到达。以下说法正确的是？", "options": ["B 必须等 A 执行完才能进入", "A 与 B 同时执行", "B 抢占打断 A，先执行 B，再回来继续 A", "A 中断被自动屏蔽，永远无法再触发"], "answer": 2, "explanation": "抢占优先级数字越小越高，B（0）能打断 A（1）。执行完 B 后 CPU 回到 A 的断点继续执行 A。", "pitfall": "抢占 = 能插队；响应 = 只能排队。数字越小优先级越高。"}, {"type": "choice", "points": 4, "question": "EXTI 线 10~15 共用一个中断服务函数 EXTI15_10_IRQHandler，函数内如何区分具体是哪条线触发的？", "options": ["不需要区分，随便处理", "用 EXTI_GetITStatus 逐条判断 EXTI_Line10~15", "通过读取 GPIO 电平判断", "用 switch 判断 EXTI 线的编号"], "answer": 1, "explanation": "共用中断号时，ISR 里用 EXTI_GetITStatus(EXTI_LineX) 逐个判断哪条线触发，再清对应标志。", "pitfall": "这是面试常考细节：共用 Handler 必须靠标志位区分。"}, {"type": "choice", "points": 4, "question": "GPIO_EXTILineConfig 映射引脚到 EXTI 线，却忘了开 AFIO 时钟。最可能的现象是？", "options": ["编译报错，无法生成固件", "程序运行崩溃，芯片死机", "下载失败，ST-Link 报错", "编译下载都正常，但中断静默失效、怎么触发都没反应"], "answer": 3, "explanation": "AFIO 时钟没开 → 映射寄存器写不进 → 引脚根本没接到 EXTI 线 → 中断永不触发。编译和运行都不报错，是最阴的坑。", "pitfall": "这是真实踩过的坑（1005 工程）：症状与代码分离，只能靠排查。"}, {"type": "choice", "points": 4, "question": "中断服务函数里忘了调用 EXTI_ClearITPendingBit 清标志，会发生什么？", "options": ["没有任何影响", "下次中断无法触发", "芯片进入低功耗模式", "中断标志一直为 SET，会反复进入 ISR，主程序被卡死"], "answer": 3, "explanation": "不清标志 → 标志保持 SET → NVIC 认为中断一直存在 → 反复进 ISR → 主程序永远执行不到。", "pitfall": "「先判标志、后清标志」是 ISR 铁律。"}, {"type": "choice", "points": 4, "question": "旋转编码器正转时，A 相上升沿对应的 B 相电平为低；反转时 A 相上升沿对应 B 相为高。据此判断方向的方法是？", "options": ["正转计数加 1，反转计数减 1（在 A 沿时读 B 电平判向）", "只读 A 相电平变化，不看 B 相", "通过测量两次沿的时间差判断", "编码器本身不输出方向信息"], "answer": 0, "explanation": "EXTI 方案：A 相触发中断 → 中断里读 B 相电平 → B 低为正转(+1)，B 高为反转(-1)。", "pitfall": "相位差 90° 是正交编码器判向的基础。"}, {"type": "choice", "points": 4, "question": "为什么中断服务函数里应尽量避免长时间 Delay_ms 延时？", "options": ["延时会让编译器报错", "中断执行期间主程序和低优先级中断都被阻塞，长时间延时严重影响系统响应", "Delay_ms 不能在中断里调用（语法错误）", "延时会让中断标志丢失"], "answer": 1, "explanation": "ISR 执行期间 CPU 被占用，其他中断和主程序都等着。延时越长，系统越卡。需要延时应放到主程序里处理。", "pitfall": "中断处理要短平快是嵌入式基本原则。"}, {"type": "choice", "points": 4, "question": "NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2) 的含义是？", "options": ["禁止使用 2 个以上中断", "只允许中断优先级为 2", "4 位优先级中 2 位给抢占、2 位给响应", "把系统时钟频率配置为 2 分频"], "answer": 2, "explanation": "Group 2 = 抢占优先级占 2 位（0~3）、响应优先级占 2 位（0~3）。全工程只能调用一次分组配置。", "pitfall": "优先级分组决定抢占/响应各用几位，必须在配置前定好。"}, {"type": "multi", "points": 6, "question": "关于中断相比轮询的优势，以下说法正确的有？", "options": ["CPU 平时可以执行主程序，事件到来才响应，效率高", "中断响应是事件驱动，比轮询检查更及时", "使用中断后主程序可以不写 while(1) 循环", "多个中断可以按优先级嵌套，重要任务优先处理"], "answer": [0, 1, 3], "explanation": "中断优势：事件驱动、效率高、响应及时、支持优先级嵌套。主程序仍需要 while(1) 主循环（即使空转），所以 C 错。", "pitfall": "注意：用了中断不代表主程序可以不写循环。"}, {"type": "multi", "points": 6, "question": "关于 NVIC 抢占优先级与响应优先级，正确的说法有？", "options": ["抢占优先级数字越小，中断级别越高，能打断低抢占的中断", "响应优先级只在抢占优先级相同时才比较，且不能打断", "响应优先级高的中断可以打断正在执行的抢占优先级低的中断", "同一个中断的抢占和响应优先级可以分别设置"], "answer": [0, 1, 3], "explanation": "抢占决定能否打断（数字小优先）；响应决定同抢占时的排队顺序（不可打断）。C 说反了——响应不能打断抢占。", "pitfall": "抢占=插队，响应=排队；数字越小优先级越高。"}, {"type": "tf", "points": 3, "question": "EXTI 线 0~4 每一条都有自己独立的中断服务函数名（EXTI0_IRQHandler ~ EXTI4_IRQHandler）。", "answer": 0, "explanation": "正确。EXTI0~4 独立中断号；线 5~9 共用 EXTI9_5_IRQn，线 10~15 共用 EXTI15_10_IRQn。", "pitfall": ""}, {"type": "tf", "points": 3, "question": "中断服务函数的名字可以随意命名，只要功能对就行。", "answer": 1, "explanation": "错误。函数名必须与启动文件向量表里注册的名字一致（如 EXTI15_10_IRQHandler），拼错则中断静默失效，编译器不报错。", "pitfall": ""}, {"type": "tf", "points": 3, "question": "在中断服务函数里做 500ms 的延时是合理的编程习惯。", "answer": 1, "explanation": "错误。ISR 要短平快，长时间延时会阻塞主程序和其他中断。", "pitfall": ""}, {"type": "tf", "points": 3, "question": "只要配置了 EXTI_Init 和 NVIC_Init，即使不开 AFIO 时钟，中断也能正常工作。", "answer": 1, "explanation": "错误。GPIO_EXTILineConfig（AFIO 重映射）不开 AFIO 时钟则映射失败，中断永不触发。", "pitfall": ""}, {"type": "tf", "points": 3, "question": "NVIC_PriorityGroupConfig 分组配置可以在工程中多次调用，每次都可以重新分组。", "answer": 1, "explanation": "错误。分组配置全工程只能调用一次，重复调用会导致优先级配置混乱。", "pitfall": ""}, {"type": "fill", "points": 4, "question": "中断完整流程的五个环节：中断请求 → ____（NVIC 按优先级判断）→ 保护现场 → 执行 ISR → 恢复现场。", "answer": [["优先级判断", "NVIC 判断", "NVIC 响应"]], "explanation": "中断五步：请求 → NVIC 判断 → 保护现场（压栈）→ 执行 ISR → 恢复现场（出栈）。", "pitfall": ""}, {"type": "fill", "points": 4, "question": "中断服务函数里必须做两件事：用 EXTI_GetITStatus ____ 标志是否触发，再用 EXTI_ClearITPendingBit ____ 标志。", "answer": [["判断", "检查"], ["清除", "清"]], "explanation": "ISR 铁律：先判断标志（区分哪条线），再清除标志（防止反复触发）。", "pitfall": ""}, {"type": "fill", "points": 4, "question": "F103 中，EXTI 线 ____ 到 ____ 共用中断号 EXTI15_10_IRQn。", "answer": [["10"], ["15"]], "explanation": "EXTI0~4 独立、5~9 共用 EXTI9_5、10~15 共用 EXTI15_10。", "pitfall": ""}, {"type": "fill", "points": 4, "question": "NVIC 分组 Group 2 表示 4 位优先级中，____ 位给抢占优先级、____ 位给响应优先级。", "answer": [["2"], ["2"]], "explanation": "Group 0~4：抢占位 0/1/2/3/4，响应位 4/3/2/1/0。", "pitfall": ""}, {"type": "short", "points": 8, "question": "一个高优先级中断到达时，CPU 处理它的完整过程是怎样的？（从请求到恢复）", "answer": -1, "explanation": "<strong>参考答案</strong>：① 外部事件（如按键/红外）使 GPIO 引脚电平变化 → AFIO 映射到 EXTI 线 → EXTI 检测到边沿产生中断请求；② 请求进入 NVIC；③ NVIC 比较优先级，决定是否响应（当前无更高优先级则响应）；④ CPU 硬件自动保护现场（寄存器压栈）；⑤ 跳转到中断服务函数 ISR 执行（用户代码：判断标志、清标志、处理逻辑）；⑥ ISR 返回，硬件恢复现场（出栈）；⑦ 回到主程序被中断的断点继续执行。<br><br><strong>评分要点</strong>：触发源（2 分）+ NVIC 判断（2 分）+ 保护现场（1 分）+ ISR 内容（2 分）+ 恢复现场返回（1 分）。", "pitfall": ""}, {"type": "short", "points": 8, "question": "旋转编码器计次为什么用 EXTI 中断读另一相（B 相）判断方向？快速旋转时这个方案有什么缺点？", "answer": -1, "explanation": "<strong>参考答案</strong>：编码器输出 A、B 两相（相位差 90°），正转/反转时两相跳变先后不同。在 A 相触发的中断里读 B 相电平：B 低为正转（+1）、B 高为反转（-1），从而判断方向。<br><br><strong>缺点</strong>：EXTI 软件方案在快速旋转时，中断还没处理完下一个边沿就到来了，会<strong>丢脉冲</strong>导致计数不准；且中断频繁占用 CPU。<br><br><strong>改进</strong>：用 TIM 编码器接口硬件正交解码（6-8 章内容），自动判向计数、不丢脉冲、不占 CPU。<br><br><strong>评分要点</strong>：判向原理（4 分）+ 丢脉冲缺点（2 分）+ 改进方案（2 分）。", "pitfall": ""}, {"type": "essay", "points": 11, "question": "请按顺序说明：一个按键按下（接 GND，配置为下降沿触发 EXTI）从硬件到软件完整经过哪些模块？每个模块对应你写的哪一句配置代码？", "answer": -1, "explanation": "<strong>参考答案（完整链路）</strong>：<br>① <b>GPIO 引脚</b>：按键按下 → PB1 电平从高变低。<br>② <b>GPIO 配置</b>：<code>GPIO_Mode_IPU</code>（上拉输入）+ <code>GPIO_Init()</code>。<br>③ <b>AFIO 中断引脚选择</b>：<code>GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1)</code> 把 PB1 接到 EXTI_Line1（必须先开 AFIO 时钟）。<br>④ <b>EXTI 边沿检测</b>：<code>EXTI_Init</code> 配置 <code>EXTI_Trigger_Falling</code>（下降沿触发）→ 产生中断请求。<br>⑤ <b>NVIC 调度</b>：<code>NVIC_Init</code> 使能 <code>EXTI1_IRQn</code> + 设置优先级。<br>⑥ <b>CPU 执行 ISR</b>：跳转 <code>EXTI1_IRQHandler</code> → 判断标志、清标志、处理（如计数 +1）→ 返回主程序。<br><br><strong>评分要点</strong>：链路顺序完整（4 分）；每模块对应正确代码（4 分）；AFIO 时钟要点（2 分）；ISR 铁律（1 分）。", "pitfall": ""}];
+var LABELS = {"page_title": "章节测试", "section": {"choice": "一、选择题", "multi": "二、多选题", "tf": "三、判断题", "fill": "四、填空题", "short": "五、简答题", "calc": "六、计算题", "code": "七、代码题", "essay": "八、问答题", "comprehensive": "九、综合题"}, "section_order": ["choice", "multi", "tf", "fill", "short", "calc", "code", "essay", "comprehensive"], "points_suffix": "分", "true_label": "正确", "false_label": "错误", "placeholder": "在此作答...", "code_placeholder": "在此编写代码...", "pitfall_prefix": "易错提醒：", "correct_label": "正确", "wrong_label": "错误", "partial_label": "部分正确", "answer_prefix": "正确答案：", "reference_label": "参考答案", "graded_label": "已批改", "grade_button": "提交批改", "score_label": "总分", "duration_prefix": "满分 100 分 | 建议 ", "duration_suffix": " 分钟 | 选择答案后点击提交批改"};
+
+// ─── Answer normalization (robust to how the JSON was authored) ──────
+// tf / choice answers may arrive as int index, boolean, letter ("A"),
+// or label string ("正确"/"错误"/"对"/"错"). All are coerced to an
+// option index so grading never silently fails on a type mismatch.
+
+function tfAnswerIndex(ans) {
+  // option 0 = true_label (正确), option 1 = false_label (错误)
+  if (typeof ans === 'boolean') return ans ? 0 : 1;
+  if (typeof ans === 'number') return ans === 0 ? 0 : 1;
+  var s = ('' + ans).trim().toLowerCase();
+  var truthy = ['0', 't', 'true', '正确', '对', '是', 'yes', 'y', '√', '✓'];
+  var falsy  = ['1', 'f', 'false', '错误', '错', '否', 'no', 'n', '×', 'x'];
+  if (truthy.indexOf(s) !== -1) return 0;
+  if (falsy.indexOf(s) !== -1) return 1;
+  return ans ? 0 : 1;
+}
+
+function choiceAnswerIndex(ans, options) {
+  if (typeof ans === 'number') return ans;
+  var s = ('' + ans).trim();
+  if (/^[A-Za-z]$/.test(s)) return s.toUpperCase().charCodeAt(0) - 65;
+  if (/^\d+$/.test(s)) return parseInt(s, 10);
+  if (options) {
+    for (var i = 0; i < options.length; i++) {
+      if (('' + options[i]).trim() === s) return i;
+    }
+  }
+  return parseInt(s, 10);
+}
+
+function multiAnswerSet(ans, options) {
+  var arr = Array.isArray(ans) ? ans : [ans];
+  var set = {};
+  for (var i = 0; i < arr.length; i++) {
+    set[choiceAnswerIndex(arr[i], options)] = true;
+  }
+  return set;
+}
+
+// Normalize free text for fill-in-the-blank comparison: trim, lowercase,
+// drop surrounding whitespace and common punctuation, unify full/half width.
+function normText(s) {
+  s = ('' + s).trim().toLowerCase();
+  s = s.replace(/[\s　]+/g, '');
+  s = s.replace(/[.,;:!?。，、；：！？“”"'（）()【】\[\]<>《》]/g, '');
+  // full-width ASCII -> half-width
+  s = s.replace(/[！-～]/g, function (c) {
+    return String.fromCharCode(c.charCodeAt(0) - 0xfee0);
+  });
+  return s;
+}
+
+// How many blanks does a fill question have? Count underscore / ＿ runs.
+function fillBlankCount(question) {
+  var m = ('' + question).match(/(_{2,}|＿+)/g);
+  return m ? m.length : 0;
+}
+
+// Coerce a fill `answer` into an array (one entry per blank) of accepted
+// answer lists. Handles: string, [synonyms], [[blank1 syns],[blank2 syns]].
+function fillBlankAnswers(ans, nBlanks) {
+  if (nBlanks < 1) nBlanks = 1;
+  if (!Array.isArray(ans)) return padBlanks([[ans]], nBlanks);
+  if (ans.length && Array.isArray(ans[0])) return padBlanks(ans, nBlanks);
+  // flat array of strings
+  if (nBlanks === 1) return [ans];                 // synonyms for one blank
+  if (ans.length === nBlanks) {                    // one answer per blank
+    return ans.map(function (a) { return [a]; });
+  }
+  return padBlanks([ans], nBlanks);                // ambiguous -> all on blank 1
+}
+
+function padBlanks(arr, n) {
+  var out = arr.slice(0, n);
+  while (out.length < n) out.push(['']);
+  return out;
+}
+
+// ─── Build ───────────────────────────────────────────────────────────
+
+function build() {
+  var container = document.getElementById('questions-container');
+  if (!container) { console.error('ExamPass: questions-container not found'); return; }
+
+  // Stable-sort questions by section order so headings group correctly
+  // regardless of input order.
+  var order = LABELS.section_order || [];
+  Q.forEach(function (q, i) { q._i = i; });
+  Q.sort(function (a, b) {
+    var oa = order.indexOf(a.type); if (oa === -1) oa = 99;
+    var ob = order.indexOf(b.type); if (ob === -1) ob = 99;
+    return oa - ob || a._i - b._i;
+  });
+
+  var h = '';
+  var sec = '';
+  var titles = LABELS.section;
+
+  for (var i = 0; i < Q.length; i++) {
+    var q = Q[i];
+    if (q.type !== sec) {
+      sec = q.type;
+      if (titles[q.type]) h += '<h3>' + titles[q.type] + '</h3>';
+    }
+
+    var qid = 'q' + i;
+    h += '<div class="q-card" id="card-' + qid + '">';
+    h += '<div class="q-num">' + (i + 1) + '. (' + q.points + ' ' + LABELS.points_suffix + ')</div>';
+
+    if (q.type === 'fill') {
+      h += '<div class="q-text">' + renderFill(q, qid) + '</div>';
+    } else {
+      h += '<div class="q-text">' + q.question + '</div>';
+    }
+
+    if (q.type === 'choice') {
+      var opts = q.options || [];
+      for (var j = 0; j < opts.length; j++) {
+        h += '<label class="option" id="opt-' + qid + '-' + j + '" onclick="sel(\'' + qid + '\',' + j + ')">';
+        h += '<input type="radio" name="' + qid + '" value="' + j + '">' + String.fromCharCode(65 + j) + '. ' + opts[j] + '</label>';
+      }
+    } else if (q.type === 'multi') {
+      var mopts = q.options || [];
+      for (var k = 0; k < mopts.length; k++) {
+        h += '<label class="option" id="opt-' + qid + '-' + k + '" onclick="toggle(\'' + qid + '\',' + k + ')">';
+        h += '<input type="checkbox" name="' + qid + '" value="' + k + '">' + String.fromCharCode(65 + k) + '. ' + mopts[k] + '</label>';
+      }
+    } else if (q.type === 'tf') {
+      h += '<label class="option" id="opt-' + qid + '-0" onclick="sel(\'' + qid + '\',0)">';
+      h += '<input type="radio" name="' + qid + '" value="0">' + LABELS.true_label + '</label>';
+      h += '<label class="option" id="opt-' + qid + '-1" onclick="sel(\'' + qid + '\',1)">';
+      h += '<input type="radio" name="' + qid + '" value="1">' + LABELS.false_label + '</label>';
+    } else if (q.type === 'fill') {
+      // inputs already rendered inline inside q-text
+    } else if (q.type === 'code') {
+      h += '<textarea class="q-textarea q-code" id="text-' + qid + '" placeholder="' + (LABELS.code_placeholder || LABELS.placeholder) + '" rows="8" spellcheck="false"></textarea>';
+    } else {
+      h += '<textarea class="q-textarea" id="text-' + qid + '" placeholder="' + LABELS.placeholder + '" rows="3"></textarea>';
+    }
+
+    h += '<div class="result" id="result-' + qid + '">';
+    h += '<span class="badge" id="badge-' + qid + '"></span><span id="correct-' + qid + '"></span>';
+    h += '<div class="explanation">' + (q.explanation || '') + '</div>';
+    if (q.pitfall) {
+      h += '<div class="pitfall">' + LABELS.pitfall_prefix + q.pitfall + '</div>';
+    }
+    h += '</div></div>';
+  }
+
+  container.innerHTML = h;
+
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([container]).catch(function (err) {
+      console.error('MathJax typeset error:', err);
+    });
+  }
+}
+
+// Render fill question text with inline <input> boxes replacing blanks.
+function renderFill(q, qid) {
+  var nBlanks = fillBlankCount(q.question);
+  var k = 0;
+  var html = ('' + q.question).replace(/(_{2,}|＿+)/g, function () {
+    var inp = '<input type="text" class="fill-input" id="fill-' + qid + '-' + k + '" autocomplete="off" spellcheck="false">';
+    k++;
+    return inp;
+  });
+  if (k === 0) {
+    // No markers in text -> append boxes based on answer shape
+    var n = fillBlankAnswers(q.answer, 1).length;
+    var ans = q.answer;
+    if (Array.isArray(ans)) n = Array.isArray(ans[0]) ? ans.length : (ans.length || 1);
+    if (n < 1) n = 1;
+    html += '<div class="fill-row">';
+    for (var b = 0; b < n; b++) {
+      if (n > 1) html += '<span class="fill-tag">' + (b + 1) + '.</span>';
+      html += '<input type="text" class="fill-input" id="fill-' + qid + '-' + b + '" autocomplete="off" spellcheck="false">';
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+document.addEventListener('DOMContentLoaded', build);
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+  build();
+}
+
+// ─── Selection handlers ──────────────────────────────────────────────
+
+function sel(qid, idx) {
+  var prefix = 'opt-' + qid + '-';
+  var all = document.querySelectorAll('[id^="' + prefix + '"]');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('selected');
+  var target = document.getElementById('opt-' + qid + '-' + idx);
+  if (target) target.classList.add('selected');
+  var radio = document.querySelector('input[name="' + qid + '"][value="' + idx + '"]');
+  if (radio) radio.checked = true;
+}
+
+function toggle(qid, idx) {
+  var box = document.querySelector('input[name="' + qid + '"][value="' + idx + '"]');
+  var label = document.getElementById('opt-' + qid + '-' + idx);
+  if (!box) return;
+  box.checked = !box.checked;
+  if (label) label.classList.toggle('selected', box.checked);
+}
+
+// ─── Grading ─────────────────────────────────────────────────────────
+
+function gradeAll() {
+  var score = 0;
+  for (var i = 0; i < Q.length; i++) {
+    var q = Q[i];
+    var qid = 'q' + i;
+    var card = document.getElementById('card-' + qid);
+    var result = document.getElementById('result-' + qid);
+    var badge = document.getElementById('badge-' + qid);
+    var correctEl = document.getElementById('correct-' + qid);
+    if (!card || !result) continue;
+
+    result.style.display = 'block';
+
+    if (q.type === 'choice' || q.type === 'tf') {
+      score += gradeSingle(q, qid, card, badge, correctEl);
+    } else if (q.type === 'multi') {
+      score += gradeMulti(q, qid, card, badge, correctEl);
+    } else if (q.type === 'fill') {
+      score += gradeFill(q, qid, card, badge, correctEl);
+    } else {
+      card.classList.add('correct');
+      badge.className = 'badge badge-ref';
+      badge.textContent = LABELS.reference_label;
+    }
+  }
+
+  var sb = document.getElementById('score-box');
+  if (sb) {
+    sb.style.display = 'block';
+    document.getElementById('score-num').textContent = roundScore(score);
+    sb.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  var opts = document.querySelectorAll('.option');
+  for (var a = 0; a < opts.length; a++) opts[a].style.pointerEvents = 'none';
+  var tas = document.querySelectorAll('.q-textarea');
+  for (var b = 0; b < tas.length; b++) tas[b].disabled = true;
+  var fis = document.querySelectorAll('.fill-input');
+  for (var c = 0; c < fis.length; c++) fis[c].disabled = true;
+
+  var btn = document.getElementById('grade-btn');
+  if (btn) { btn.disabled = true; btn.textContent = LABELS.graded_label; }
+
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise().catch(function (err) {
+      console.error('MathJax typeset error:', err);
+    });
+  }
+}
+
+function roundScore(s) {
+  return Math.round(s * 10) / 10;
+}
+
+function gradeSingle(q, qid, card, badge, correctEl) {
+  var ansIdx = q.type === 'tf' ? tfAnswerIndex(q.answer) : choiceAnswerIndex(q.answer, q.options);
+  var radio = document.querySelector('input[name="' + qid + '"]:checked');
+  if (radio && parseInt(radio.value, 10) === ansIdx) {
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+    correctEl.innerHTML = '';
+    var ok = document.getElementById('opt-' + qid + '-' + ansIdx);
+    if (ok) ok.classList.add('correct-answer');
+    return q.points;
+  }
+  card.classList.add('wrong');
+  badge.className = 'badge badge-no';
+  badge.textContent = LABELS.wrong_label;
+  var ansText = q.type === 'choice'
+    ? String.fromCharCode(65 + ansIdx) + '. ' + (q.options ? q.options[ansIdx] : '')
+    : (ansIdx === 0 ? LABELS.true_label : LABELS.false_label);
+  correctEl.innerHTML = LABELS.answer_prefix + ansText;
+  if (radio) {
+    var wrongOpt = document.getElementById('opt-' + qid + '-' + radio.value);
+    if (wrongOpt) wrongOpt.classList.add('wrong-answer');
+  }
+  var corr = document.getElementById('opt-' + qid + '-' + ansIdx);
+  if (corr) corr.classList.add('correct-answer');
+  return 0;
+}
+
+function gradeMulti(q, qid, card, badge, correctEl) {
+  var want = multiAnswerSet(q.answer, q.options);
+  var wantKeys = Object.keys(want).map(Number);
+  var checked = document.querySelectorAll('input[name="' + qid + '"]:checked');
+  var picked = [];
+  for (var i = 0; i < checked.length; i++) picked.push(parseInt(checked[i].value, 10));
+
+  var anyWrong = false, hitCorrect = 0;
+  for (var p = 0; p < picked.length; p++) {
+    if (want[picked[p]]) hitCorrect++;
+    else anyWrong = true;
+  }
+
+  // reveal correct / wrong option markers
+  var mopts = q.options || [];
+  for (var j = 0; j < mopts.length; j++) {
+    var el = document.getElementById('opt-' + qid + '-' + j);
+    if (!el) continue;
+    if (want[j]) el.classList.add('correct-answer');
+    else if (picked.indexOf(j) !== -1) el.classList.add('wrong-answer');
+  }
+
+  var earned;
+  if (!anyWrong && hitCorrect === wantKeys.length && picked.length === wantKeys.length) {
+    earned = q.points;
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+    correctEl.innerHTML = '';
+  } else if (!anyWrong && hitCorrect > 0) {
+    // 少选不错选 -> partial credit
+    earned = roundScore(q.points * hitCorrect / wantKeys.length);
+    card.classList.add('partial');
+    badge.className = 'badge badge-partial';
+    badge.textContent = LABELS.partial_label;
+    correctEl.innerHTML = LABELS.answer_prefix + multiAnswerText(wantKeys, mopts);
+  } else {
+    earned = 0;
+    card.classList.add('wrong');
+    badge.className = 'badge badge-no';
+    badge.textContent = LABELS.wrong_label;
+    correctEl.innerHTML = LABELS.answer_prefix + multiAnswerText(wantKeys, mopts);
+  }
+  return earned;
+}
+
+function multiAnswerText(keys, options) {
+  return keys.sort(function (a, b) { return a - b; }).map(function (k) {
+    return String.fromCharCode(65 + k) + '. ' + (options ? options[k] : '');
+  }).join('  ');
+}
+
+function gradeFill(q, qid, card, badge, correctEl) {
+  var nBlanks = fillBlankCount(q.question);
+  var blanks = fillBlankAnswers(q.answer, nBlanks);
+  var n = blanks.length;
+  var hit = 0;
+  var displays = [];
+
+  for (var b = 0; b < n; b++) {
+    var inp = document.getElementById('fill-' + qid + '-' + b);
+    var accepted = blanks[b] || [''];
+    var user = inp ? normText(inp.value) : '';
+    var ok = false;
+    for (var a = 0; a < accepted.length; a++) {
+      if (accepted[a] !== '' && normText(accepted[a]) === user && user !== '') { ok = true; break; }
+    }
+    if (inp) inp.classList.add(ok ? 'fill-ok' : 'fill-no');
+    if (ok) hit++;
+    displays.push((n > 1 ? (b + 1) + '. ' : '') + accepted.filter(function (x) { return x !== ''; }).join(' / '));
+  }
+
+  var earned = roundScore(q.points * hit / n);
+  correctEl.innerHTML = LABELS.answer_prefix + displays.join('   ');
+
+  if (hit === n) {
+    card.classList.add('correct');
+    badge.className = 'badge badge-ok';
+    badge.textContent = LABELS.correct_label;
+  } else if (hit > 0) {
+    card.classList.add('partial');
+    badge.className = 'badge badge-partial';
+    badge.textContent = LABELS.partial_label;
+  } else {
+    card.classList.add('wrong');
+    badge.className = 'badge badge-no';
+    badge.textContent = LABELS.wrong_label;
+  }
+  return earned;
+}
+
+</script>
+</body>
+</html>

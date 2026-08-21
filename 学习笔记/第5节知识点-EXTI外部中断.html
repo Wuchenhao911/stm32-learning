@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 5 节 交互式知识点 · EXTI 外部中断（江科大 P11-P12）</title>
+<style>
+  :root{
+    --bg:#f4f6f9; --card:#fff; --border:#e2e8f0;
+    --text:#1e293b; --muted:#64748b;
+    --blue:#2563eb; --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+    --green:#059669; --green-bg:#ecfdf5; --green-bd:#a7f3d0;
+    --orange:#d97706; --orange-bg:#fffbeb; --orange-bd:#fde68a;
+    --red:#dc2626; --red-bg:#fef2f2; --red-bd:#fecaca;
+    --purple:#7c3aed; --purple-bg:#f5f3ff; --purple-bd:#ddd6fe;
+    --code-bg:#0f172a; --code-text:#e2e8f0;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei","PingFang SC",sans-serif;line-height:1.8;padding:24px 16px;}
+  .wrap{max-width:960px;margin:0 auto;}
+
+  .hero{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;border-radius:16px;padding:24px 28px;margin-bottom:20px;}
+  .hero h1{font-size:24px;margin-bottom:4px;}
+  .hero .sub{opacity:.9;font-size:13px;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;}
+  .card-head{padding:12px 22px;background:var(--blue-bg);border-bottom:1px solid var(--border);font-weight:600;color:var(--blue);font-size:15px;display:flex;align-items:center;gap:10px;}
+  .card-head .num{background:var(--blue);color:#fff;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .card-body{padding:18px 22px;}
+
+  p{margin:5px 0;}
+  ul,ol{margin:6px 0 6px 22px;}
+  li{margin:3px 0;}
+  h4{margin:12px 0 4px;font-size:14px;}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;}
+  th{background:var(--blue-bg);color:var(--blue);text-align:left;padding:8px 12px;border:1px solid var(--border);font-weight:600;}
+  td{padding:8px 12px;border:1px solid var(--border);}
+  tr:nth-child(even) td{background:#f8fafc;}
+
+  pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:14px 18px;overflow-x:auto;font-size:13px;line-height:1.7;margin:10px 0;}
+  code{font-family:"Consolas","Courier New",monospace;}
+
+  .note{border-radius:10px;padding:10px 14px;margin:10px 0;font-size:13.5px;border:1px solid transparent;}
+  .note.key{background:var(--blue-bg);border-color:var(--blue-bd);color:#1e3a8a;}
+  .note.warn{background:var(--orange-bg);border-color:var(--orange-bd);color:#92400e;}
+  .note.danger{background:var(--red-bg);border-color:var(--red-bd);color:#991b1b;}
+  .note.ok{background:var(--green-bg);border-color:var(--green-bd);color:#065f46;}
+  .note .t{font-weight:700;margin-right:6px;}
+
+  .ctl{display:flex;gap:10px;justify-content:center;margin:12px 0;flex-wrap:wrap;}
+  .btn{padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s;}
+  .btn-primary{background:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#1d4ed8;}
+  .btn-ghost{background:#eef2f7;color:var(--text);}
+  .btn-ghost:hover{background:#e2e8f0;}
+  .btn-green{background:#059669;color:#fff;}
+  .btn-green:hover{background:#047857;}
+  .btn-red{background:#dc2626;color:#fff;}
+  .btn-red:hover{background:#b91c1c;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  .status{text-align:center;font-size:14px;margin-top:10px;min-height:26px;padding:6px;border-radius:8px;background:#f8fafc;border:1px dashed var(--border);}
+
+  /* 中断流程图 */
+  .irq-flow{display:flex;align-items:stretch;gap:6px;justify-content:center;margin:14px 0;flex-wrap:wrap;}
+  .irq-stage{border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;text-align:center;font-size:12.5px;background:#f8fafc;transition:all .3s;width:130px;}
+  .irq-stage .ic{font-size:20px;display:block;margin-bottom:4px;}
+  .irq-stage.active{border-color:var(--blue);background:var(--blue-bg);box-shadow:0 0 12px rgba(37,99,235,.25);transform:translateY(-3px);}
+  .irq-stage.active .ic{animation:pulse 0.5s infinite alternate;}
+  @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.25)}}
+  .irq-arrow{align-self:center;font-size:18px;color:var(--muted);}
+
+  /* NVIC 优先级表 */
+  .pri-table{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+  .pri-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;background:#f8fafc;cursor:pointer;transition:all .2s;}
+  .pri-row:hover{border-color:var(--purple);background:var(--purple-bg);}
+  .pri-row .name{font-weight:700;font-size:14px;width:110px;}
+  .pri-row .lvl{font-family:Consolas,monospace;font-size:13px;color:var(--muted);}
+  .pri-row .desc{font-size:12.5px;color:var(--muted);flex:1;}
+  .pri-row .badge{font-size:11px;font-weight:700;padding:2px 10px;border-radius:12px;}
+  .b-green{background:var(--green-bg);color:var(--green);}
+  .b-red{background:var(--red-bg);color:var(--red);}
+
+  /* 编码器波形 */
+  .enc-wrap{display:flex;justify-content:center;margin:10px 0;}
+  .enc-status{text-align:center;font-size:15px;font-weight:700;margin-top:8px;}
+
+  /* EXTI 配置五步向导 */
+  .wiz-step{display:flex;gap:14px;padding:12px 16px;border:1px solid var(--border);border-radius:10px;margin:8px 0;cursor:pointer;transition:all .25s;background:#f8fafc;}
+  .wiz-step:hover{border-color:var(--blue);background:var(--blue-bg);}
+  .wiz-step.open{border-color:var(--blue);background:var(--blue-bg);}
+  .wiz-idx{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;margin-top:2px;}
+  .wiz-body{flex:1;}
+  .wiz-title{font-weight:600;font-size:14px;}
+  .wiz-detail{display:none;margin-top:6px;font-size:13.5px;border-top:1px dashed var(--border);padding-top:8px;}
+  .wiz-step.open .wiz-detail{display:block;}
+
+  .footer{text-align:center;color:var(--muted);font-size:12px;padding:16px 0 8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>第 5 节 交互式知识点 · EXTI 外部中断</h1>
+    <div class="sub">江科大 P11 [5-1] EXTI外部中断理论 · P12 [5-2] 红外计次 / 编码器计次 · 难点加互动</div>
+  </div>
+
+  <!-- ========== 0. 中断是什么（一句话 + 简单对比，不加互动） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">0</div>中断是什么（一句话建立直觉）</div>
+    <div class="card-body">
+      <p><b>中断 = CPU 干活干得好好的，被一个紧急事件"打断"，先去处理紧急事，处理完回来接着干。</b></p>
+      <div class="note key"><span class="t">类比</span>你在写作业（主程序），妈妈喊你"来吃饭"（中断请求）——你先保存当前写到哪一页（保护现场），去吃饭（执行中断服务函数），吃完回来接着写（恢复现场）。<br><b>好处</b>：不用每写一行就问"该吃饭了吗"（轮询），妈妈一喊你就知道（事件驱动）——CPU 更高效。</div>
+      <p>轮询 vs 中断：</p>
+      <table>
+        <tr><th>方式</th><th>做法</th><th>缺点</th></tr>
+        <tr><td>轮询（无中断）</td><td>while 循环里反复检查按键状态</td><td>CPU 一直"空转检查"，浪费；响应慢</td></tr>
+        <tr><td>中断（事件驱动）</td><td>按键触发 EXTI → 自动跳去处理</td><td>CPU 平时干别的，来了才处理，高效</td></tr>
+      </table>
+      <div class="note ok"><span class="t">一句话</span>你的 1004 红外计次、1005 编码器，都是 EXTI 中断——<b>平时 CPU 刷新 OLED，红外被挡一下才跳进去 +1</b>。</div>
+    </div>
+  </div>
+
+  <!-- ========== PPT 官方结构图（44、47 页） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">★</div>PPT 官方结构图：NVIC 与 EXTI 的"骨架"（江科大 PPT 44/47 页重绘）</div>
+    <div class="card-body">
+
+      <h4>图 1 · NVIC 基本结构（PPT 第 44 页）—— 所有中断都汇聚到 NVIC</h4>
+      <p style="font-size:13px;color:var(--muted)">👆 点击图中色块，可高亮对应部分。这张图回答一个问题：<b>中断请求进来后，谁来"排队叫号"？</b></p>
+      <div class="i2c-wrap" style="display:flex;justify-content:center">
+        <svg id="svg-nvic" viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;cursor:pointer">
+          <style>
+            .box{stroke:#2563eb;stroke-width:1.6;fill:#fff}
+            .src{fill:#e0f2fe;stroke:#0284c7;stroke-width:1.4;rx:8}
+            .nvic{fill:#fef3c7;stroke:#d97706;stroke-width:1.6;rx:8}
+            .core{fill:#f3e8ff;stroke:#7c3aed;stroke-width:1.6;rx:10}
+            .lbl{font-family:Microsoft YaHei;font-size:12px;text-anchor:middle;fill:#1e293b}
+            .lbl-s{font-family:Microsoft YaHei;font-size:10.5px;text-anchor:middle;fill:#475569}
+            .wire{stroke:#64748b;stroke-width:1.5}
+            .hi{filter:brightness(1.15) saturate(1.3)}
+          </style>
+          <!-- 左侧：中断源 -->
+          <g class="grp-src" onclick="hi('svg-nvic','grp-src')">
+            <rect class="src" x="30"  y="40"  width="120" height="34"/><text class="lbl" x="90"  y="62">EXTI</text>
+            <rect class="src" x="30"  y="90"  width="120" height="34"/><text class="lbl" x="90"  y="112">TIM</text>
+            <rect class="src" x="30"  y="140" width="120" height="34"/><text class="lbl" x="90"  y="162">ADC</text>
+            <rect class="src" x="30"  y="190" width="120" height="34"/><text class="lbl" x="90"  y="212">USART</text>
+            <text class="lbl-s" x="90" y="255">…… 其它外设</text>
+            <text class="lbl-s" x="90" y="272">共约 60 个中断源</text>
+          </g>
+          <!-- 连线 n -->
+          <g>
+            <line class="wire" x1="150" y1="57" x2="215" y2="90"/>
+            <line class="wire" x1="150" y1="107" x2="215" y2="115"/>
+            <line class="wire" x1="150" y1="157" x2="215" y2="140"/>
+            <line class="wire" x1="150" y1="207" x2="215" y2="165"/>
+            <text class="lbl-s" x="185" y="80">n</text>
+            <text class="lbl-s" x="185" y="155">n</text>
+            <text class="lbl-s" x="185" y="185">n</text>
+          </g>
+          <!-- 中间：内核框 -->
+          <g class="grp-core" onclick="hi('svg-nvic','grp-core')">
+            <rect class="core" x="215" y="55" width="330" height="250" rx="10"/>
+            <text class="lbl" x="380" y="80" font-weight="700">内核 Cortex-M3</text>
+            <!-- NVIC 块 -->
+            <rect class="nvic" x="250" y="105" width="130" height="180"/>
+            <text class="lbl" x="315" y="128" font-weight="700">NVIC</text>
+            <text class="lbl-s" x="315" y="150">优先级 0</text>
+            <text class="lbl-s" x="315" y="172">优先级 1</text>
+            <text class="lbl-s" x="315" y="194">…</text>
+            <text class="lbl-s" x="315" y="216">优先级 15</text>
+            <text class="lbl-s" x="315" y="245" style="fill:#92400e">中断管理/排队</text>
+            <text class="lbl-s" x="315" y="263" style="fill:#92400e">（抢占+响应判断）</text>
+            <!-- CPU 块 -->
+            <rect class="src" x="420" y="105" width="100" height="180" style="fill:#fce7f3;stroke:#db2777"/>
+            <text class="lbl" x="470" y="130" font-weight="700">CPU</text>
+            <text class="lbl-s" x="470" y="152">执行主程序</text>
+            <text class="lbl-s" x="470" y="172">被打断 →</text>
+            <text class="lbl-s" x="470" y="192">跳转 ISR</text>
+            <text class="lbl-s" x="470" y="212">返回继续</text>
+          </g>
+          <!-- NVIC→CPU 箭头 -->
+          <g class="grp-core">
+            <line class="wire" x1="380" y1="195" x2="420" y2="195"/>
+            <text class="lbl-s" x="400" y="186" style="fill:#db2777">响应</text>
+          </g>
+          <!-- 右侧说明 -->
+          <text class="lbl-s" x="610" y="140">① 外设产生中断请求</text>
+          <text class="lbl-s" x="610" y="165">② 全部进 NVIC「排队叫号」</text>
+          <text class="lbl-s" x="610" y="190">③ NVIC 按优先级选最高者</text>
+          <text class="lbl-s" x="610" y="215">④ 通知 CPU 跳转 ISR</text>
+          <text class="lbl-s" x="610" y="250" style="fill:#7c3aed">点击色块可高亮</text>
+        </svg>
+      </div>
+      <div class="status" id="svg-nvic-msg" style="text-align:center">NVIC = 中断的「调度中心」：所有外设的中断请求都汇聚到这里，由它按优先级决定"谁先执行"</div>
+
+      <h4 style="margin-top:20px">图 2 · EXTI 基本结构（PPT 第 47 页）—— 外部信号怎么变成中断</h4>
+      <p style="font-size:13px;color:var(--muted)">👆 点击图中色块高亮。这张图回答：<b>GPIO 引脚上的电平变化，是怎么一路走到 NVIC 的？</b></p>
+      <div class="i2c-wrap" style="display:flex;justify-content:center">
+        <svg id="svg-exti" viewBox="0 0 820 420" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;cursor:pointer">
+          <style>
+            .box{stroke:#2563eb;stroke-width:1.6;fill:#fff}
+            .gpio{fill:#e0f2fe;stroke:#0284c7;stroke-width:1.4;rx:8}
+            .afio{fill:#fef3c7;stroke:#d97706;stroke-width:1.4;rx:8}
+            .exti{fill:#fce7f3;stroke:#db2777;stroke-width:1.6;rx:8}
+            .nvic2{fill:#f3e8ff;stroke:#7c3aed;stroke-width:1.6;rx:8}
+            .oth{fill:#dcfce7;stroke:#059669;stroke-width:1.4;rx:8}
+            .lbl{font-family:Microsoft YaHei;font-size:12px;text-anchor:middle;fill:#1e293b}
+            .lbl-s{font-family:Microsoft YaHei;font-size:10.5px;text-anchor:middle;fill:#475569}
+            .wire{stroke:#64748b;stroke-width:1.5}
+          </style>
+          <!-- 左侧：GPIO 组 -->
+          <g class="grp-gpio" onclick="hi('svg-exti','grp-gpio')">
+            <rect class="gpio" x="20"  y="50"  width="110" height="36"/><text class="lbl" x="75"  y="73">GPIOA</text>
+            <rect class="gpio" x="20"  y="105" width="110" height="36"/><text class="lbl" x="75"  y="128">GPIOB</text>
+            <rect class="gpio" x="20"  y="160" width="110" height="36"/><text class="lbl" x="75"  y="183">GPIOC</text>
+            <text class="lbl-s" x="75" y="220">…… 16 个引脚 / 组</text>
+            <text class="lbl-s" x="75" y="236" style="fill:#0284c7">（你用的 PB14 / PB0 / PB1）</text>
+          </g>
+          <!-- GPIO→AFIO 连线 16 -->
+          <g>
+            <line class="wire" x1="130" y1="68" x2="195" y2="100"/>
+            <line class="wire" x1="130" y1="123" x2="195" y2="140"/>
+            <line class="wire" x1="130" y1="178" x2="195" y2="180"/>
+            <text class="lbl-s" x="160" y="95">16</text>
+            <text class="lbl-s" x="160" y="165">16</text>
+          </g>
+          <!-- AFIO -->
+          <g class="grp-afio" onclick="hi('svg-exti','grp-afio')">
+            <rect class="afio" x="195" y="90" width="130" height="120" rx="10"/>
+            <text class="lbl" x="260" y="115" font-weight="700">AFIO</text>
+            <text class="lbl-s" x="260" y="137">中断引脚选择</text>
+            <text class="lbl-s" x="260" y="158">（16 选 1 切换）</text>
+            <text class="lbl-s" x="260" y="180" style="fill:#92400e">GPIO_EXTILineConfig</text>
+            <text class="lbl-s" x="260" y="196" style="fill:#92400e">← 忘开 AFIO 时钟就失灵</text>
+          </g>
+          <!-- AFIO→EXTI 16 线 -->
+          <g>
+            <line class="wire" x1="325" y1="150" x2="395" y2="160"/>
+            <text class="lbl-s" x="360" y="145">16</text>
+          </g>
+          <!-- 其它中断源 -->
+          <g class="grp-oth" onclick="hi('svg-exti','grp-oth')">
+            <rect class="oth" x="395" y="250" width="70" height="26"/><text class="lbl-s" x="430" y="267">PVD</text>
+            <rect class="oth" x="395" y="285" width="70" height="26"/><text class="lbl-s" x="430" y="302">RTC</text>
+            <rect class="oth" x="395" y="320" width="70" height="26"/><text class="lbl-s" x="430" y="337">USB</text>
+            <text class="lbl-s" x="430" y="365">（各 1 条线）</text>
+          </g>
+          <g>
+            <line class="wire" x1="465" y1="263" x2="510" y2="220"/>
+            <line class="wire" x1="465" y1="298" x2="510" y2="240"/>
+            <line class="wire" x1="465" y1="333" x2="510" y2="260"/>
+          </g>
+          <!-- EXTI -->
+          <g class="grp-exti" onclick="hi('svg-exti','grp-exti')">
+            <rect class="exti" x="500" y="120" width="120" height="190" rx="10"/>
+            <text class="lbl" x="560" y="145" font-weight="700">EXTI</text>
+            <text class="lbl-s" x="560" y="167">边沿检测及控制</text>
+            <text class="lbl-s" x="560" y="189">上升沿/下降沿</text>
+            <text class="lbl-s" x="560" y="211">/双边沿 触发</text>
+            <text class="lbl-s" x="560" y="240" style="fill:#db2777">EXTI_Trigger_xxx</text>
+            <text class="lbl-s" x="560" y="258" style="fill:#db2777">→ 16 根线（EXTI0~15）</text>
+          </g>
+          <!-- EXTI→NVIC 连线 -->
+          <g>
+            <line class="wire" x1="620" y1="160" x2="690" y2="150"/>
+            <line class="wire" x1="620" y1="210" x2="690" y2="190"/>
+            <text class="lbl-s" x="655" y="155">EXTI0~4</text>
+            <text class="lbl-s" x="655" y="215">EXTI9_5</text>
+            <text class="lbl-s" x="655" y="235">EXTI15_10</text>
+          </g>
+          <!-- NVIC + 其它外设 -->
+          <g class="grp-nvic2" onclick="hi('svg-exti','grp-nvic2')">
+            <rect class="nvic2" x="690" y="110" width="110" height="120" rx="10"/>
+            <text class="lbl" x="745" y="140" font-weight="700">NVIC</text>
+            <text class="lbl-s" x="745" y="165">中断调度</text>
+            <text class="lbl-s" x="745" y="185">→ CPU 执行 ISR</text>
+          </g>
+          <g class="grp-oth" onclick="hi('svg-exti','grp-oth')">
+            <rect class="oth" x="690" y="300" width="110" height="50" rx="10"/>
+            <text class="lbl-s" x="745" y="325">其它外设</text>
+            <text class="lbl-s" x="745" y="340">（SysTick 等）</text>
+          </g>
+          <!-- 右侧流程说明 -->
+          <text class="lbl-s" x="560" y="395" style="fill:#64748b">完整链路：GPIO 电平变化 → AFIO 选择 → EXTI 边沿检测 → NVIC 调度 → CPU 执行 ISR</text>
+        </svg>
+      </div>
+      <div class="status" id="svg-exti-msg" style="text-align:center">EXTI = 「门卫」：GPIO 的 16 根线经 AFIO 选通，EXTI 检测到边沿就向 NVIC 报"有人来了"</div>
+
+      <h4 style="margin-top:20px">两图连起来看（怎么讲清楚"中断从哪来到哪去"）</h4>
+      <ol>
+        <li><b>源头</b>：按键/红外/编码器 → GPIO 引脚电平变化（PPT 47 页左侧 GPIOA~C）</li>
+        <li><b>选路</b>：AFIO 决定"这根引脚对应哪条 EXTI 线"（17 页右侧图里的 AFIO 中断引脚选择）——<b>这就是 GPIO_EXTILineConfig 的硬件本质</b></li>
+        <li><b>检测</b>：EXTI 边沿检测器看"是上升沿还是下降沿"，匹配就产生中断请求（EXTI0~15）</li>
+        <li><b>调度</b>：请求进 NVIC（PPT 44 页），按优先级排队，最高者获胜（数字小优先）</li>
+        <li><b>执行</b>：NVIC 通知 CPU → 保护现场 → 跳 ISR → 恢复现场</li>
+      </ol>
+      <div class="note key"><span class="t">一句话记忆</span>GPIO 是"门口"，AFIO 是"门卫选人"，EXTI 是"报警器"，NVIC 是"调度台"，CPU 是"干活的人"。<b>你写的配置代码（GPIO_EXTILineConfig / EXTI_Init / NVIC_Init）就是在分别设置这四层</b>。</div>
+    </div>
+  </div>
+
+  <!-- ========== 1. 中断完整流程（动画，难点①） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">1</div>中断完整流程（点按钮看 CPU 被打断后发生了什么）</div>
+    <div class="card-body">
+      <div class="irq-flow" id="irq-flow">
+        <div class="irq-stage" id="st-0"><span class="ic">🏃</span>主程序<br>while(1) 刷新 OLED</div>
+        <div class="irq-arrow">→</div>
+        <div class="irq-stage" id="st-1"><span class="ic">🚨</span>中断请求<br>按键/红外触发 EXTI</div>
+        <div class="irq-arrow">→</div>
+        <div class="irq-stage" id="st-2"><span class="ic">🧠</span>NVIC 判断<br>优先级是否够？</div>
+        <div class="irq-arrow">→</div>
+        <div class="irq-stage" id="st-3"><span class="ic">📦</span>保护现场<br>把寄存器压栈</div>
+        <div class="irq-arrow">→</div>
+        <div class="irq-stage" id="st-4"><span class="ic">⚙️</span>执行 ISR<br>EXTI15_10_IRQHandler</div>
+        <div class="irq-arrow">→</div>
+        <div class="irq-stage" id="st-5"><span class="ic">↩️</span>恢复现场<br>出栈，回到断点</div>
+      </div>
+      <div class="ctl">
+        <button class="btn btn-green" id="irq-go" onclick="irqPlay()">▶ 模拟一次按键触发</button>
+        <button class="btn btn-ghost" onclick="irqReset()">重置</button>
+      </div>
+      <div class="status" id="irq-status">点「模拟一次按键触发」，看 CPU 的中断五步流程</div>
+      <div class="note key"><span class="t">记忆锚点（面试）</span>中断完整流程：<b>请求 → 判断（NVIC）→ 保护现场 → 执行 ISR → 恢复现场</b>。"保护/恢复现场"是硬件自动做的（压栈/出栈），你只需写 ISR 内容。</div>
+    </div>
+  </div>
+
+  <!-- ========== 2. NVIC 优先级（交互，难点②） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">2</div>NVIC 优先级：抢占 vs 响应（点卡片理解区别）</div>
+    <div class="card-body">
+      <p>两个中断同时/先后到达时，谁先执行？看 <b>抢占优先级</b> 和 <b>响应优先级</b> 两个维度：</p>
+      <div class="pri-table" id="pri-table">
+        <div class="pri-row" data-p="0" onclick="priPick(this)">
+          <div class="name">中断 A</div>
+          <div class="lvl">抢占 1 · 响应 1</div>
+          <div class="desc">EXTI 红外计次（按键）</div>
+          <span class="badge b-green">空闲</span>
+        </div>
+        <div class="pri-row" data-p="1" onclick="priPick(this)">
+          <div class="name">中断 B</div>
+          <div class="lvl">抢占 0 · 响应 0</div>
+          <div class="desc">TIM2 定时中断（1 秒计时）</div>
+          <span class="badge b-green">空闲</span>
+        </div>
+      </div>
+      <div class="status" id="pri-status">点击上方两个中断，看谁先执行</div>
+      <table>
+        <tr><th>概念</th><th>含义</th><th>类比</th></tr>
+        <tr><td><b>抢占优先级</b></td><td>高抢占可以<b>打断</b>正在执行的低抢占中断</td><td>急诊插队，等级高的随时插</td></tr>
+        <tr><td><b>响应优先级</b></td><td>抢占相同才比较；<b>不可打断</b>，只决定排队顺序</td><td>同等级排队，先来先办</td></tr>
+      </table>
+      <div class="note warn"><span class="t">记忆</span><b>抢占 = 能插队（打断）</b>；<b>响应 = 只能排队（不打断）</b>。抢占等级小的数字=更高优先级？<b>不！数字越小优先级越高</b>（0 最高）。</div>
+    </div>
+  </div>
+
+  <!-- ========== 3. 旋转编码器判向原理（动画，难点③） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">3</div>旋转编码器判向原理（转一转就看懂 A/B 相位）</div>
+    <div class="card-body">
+      <p><b>编码器输出 A、B 两相（相位差 90°）</b>。正转/反转时，A、B 波形的先后顺序相反——CPU 靠"谁先跳变"判断方向：</p>
+      <div class="enc-wrap">
+        <svg id="enc-svg" viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;">
+          <style>
+            .lbl{font-family:Microsoft YaHei,monospace;font-size:12px;fill:#1e293b}
+            .lbl-dim{font-family:Microsoft YaHei,monospace;font-size:11px;fill:#64748b}
+            .wa{stroke:#2563eb;stroke-width:2;fill:none}
+            .wb{stroke:#dc2626;stroke-width:2;fill:none}
+            .grid{stroke:#e2e8f0;stroke-width:1}
+            .mark{stroke:#059669;stroke-width:3}
+          </style>
+          <line class="grid" x1="40" y1="55" x2="540" y2="55"/>
+          <line class="grid" x1="40" y1="135" x2="540" y2="135"/>
+          <text class="lbl" x="10" y="98">A</text>
+          <text class="lbl" x="10" y="178">B</text>
+          <text class="lbl-dim" x="300" y="25" id="enc-title">正转（顺时针）</text>
+          <!-- A 波形（固定 8 个方波） -->
+          <path class="wa" id="enc-a" d="M40,85 H70 V35 H100 V85 H130 V35 H160 V85 H190 V35 H220 V85 H250 V35 H280 V85 H310 V35 H340 V85 H370 V35 H400 V85 H430 V35 H460 V85 H490 V35 H520 V85 H550"/>
+          <!-- B 波形（JS 更新，正转滞后 A 90°） -->
+          <path class="wb" id="enc-b" d=""/>
+          <!-- 当前沿标记 -->
+          <line class="mark" id="enc-mark" x1="60" y1="25" x2="60" y2="185"/>
+        </svg>
+      </div>
+      <div class="ctl">
+        <button class="btn btn-primary" onclick="encDir(1)">↻ 正转</button>
+        <button class="btn btn-primary" onclick="encDir(-1)">↺ 反转</button>
+        <button class="btn btn-green" onclick="encStep()">▶ 前进一个脉冲</button>
+        <button class="btn btn-ghost" onclick="encReset()">重置</button>
+      </div>
+      <div class="enc-status" id="enc-status">计数 = 0</div>
+      <div class="note key"><span class="t">看懂了什么</span><b>正转</b>：A 上升沿时 B 是 <b>低</b> → 计数 +1；<b>反转</b>：A 上升沿时 B 是 <b>高</b> → 计数 -1。<br>你的 1005 编码器工程 EXTI0 中断里读 PB1（B 相）判方向——就是这个原理。</div>
+      <div class="note warn"><span class="t">EXTI 方案的局限</span>快速旋转时中断可能<b>丢脉冲</b>（中断还没处理完下一个沿就来了）。后面 6-8 用 <b>TIM 编码器接口</b>硬件正交解码，不丢脉冲。</div>
+    </div>
+  </div>
+
+  <!-- ========== 4. EXTI 配置五步（向导，容易记） ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">4</div>EXTI 配置五步（点击展开，对照你的 1004 工程）</div>
+    <div class="card-body">
+      <div class="wiz-step" onclick="this.classList.toggle('open')">
+        <div class="wiz-idx">1</div>
+        <div class="wiz-body">
+          <div class="wiz-title">开时钟：GPIOB + AFIO</div>
+          <div class="wiz-detail"><code>RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);</code><br><b>AFIO 时钟必开！</b>GPIO_EXTILineConfig 引脚映射属于重映射功能。忘了它 → 中断静默失效（你 1005 踩过的坑）。</div>
+        </div>
+      </div>
+      <div class="wiz-step" onclick="this.classList.toggle('open')">
+        <div class="wiz-idx">2</div>
+        <div class="wiz-body">
+          <div class="wiz-title">配置 GPIO 输入（上拉）</div>
+          <div class="wiz-detail"><code>GPIO_Mode_IPU</code>，引脚如 PB14（你的红外传感器）。传感器输出低电平触发。</div>
+        </div>
+      </div>
+      <div class="wiz-step" onclick="this.classList.toggle('open')">
+        <div class="wiz-idx">3</div>
+        <div class="wiz-body">
+          <div class="wiz-title">引脚映射到 EXTI：GPIO_EXTILineConfig</div>
+          <div class="wiz-detail"><code>GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource14);</code><br>把 PB14 接到 EXTI_Line14。这条线从哪来？<b>只能从 GPIO 进来</b>——16 个 EXTI 线对应 16 个引脚号，但每个引脚号只能选一组 GPIO。</div>
+        </div>
+      </div>
+      <div class="wiz-step" onclick="this.classList.toggle('open')">
+        <div class="wiz-idx">4</div>
+        <div class="wiz-body">
+          <div class="wiz-title">配置 EXTI：触发方式（下降沿）</div>
+          <div class="wiz-detail"><code>EXTI_Trigger_Falling</code> = 下降沿触发（信号从高变低的瞬间触发一次）。红外被挡 → 输出从高变低 → 触发中断。</div>
+        </div>
+      </div>
+      <div class="wiz-step" onclick="this.classList.toggle('open')">
+        <div class="wiz-idx">5</div>
+        <div class="wiz-body">
+          <div class="wiz-title">NVIC 使能中断线 + 优先级</div>
+          <div class="wiz-detail"><code>NVIC_IRQChannel = EXTI15_10_IRQn</code>（EXTI 线 10~15 共用这一个中断号！）<br><code>NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2)</code> —— 全工程只能调一次分组。</div>
+        </div>
+      </div>
+      <div class="note ok"><span class="t">记忆口诀</span><b>开时钟(AFIO) → 配 GPIO → 映射 EXTI → 配触发 → NVIC 使能</b>。五步缺一不可。</div>
+    </div>
+  </div>
+
+  <!-- ========== 5. 中断服务函数铁律 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">5</div>中断服务函数模板（你的 1004 实际代码）</div>
+    <div class="card-body">
+      <pre><code><span style="color:#93c5fd">void</span> <span style="color:#fbbf24">EXTI15_10_IRQHandler</span>(<span style="color:#93c5fd">void</span>)
+{
+    <span style="color:#93c5fd">if</span>(<span style="color:#fbbf24">EXTI_GetITStatus</span>(EXTI_Line14) == SET)  <span style="color:#64748b">// ① 判断标志</span>
+    {
+        <span style="color:#fbbf24">EXTI_ClearITPendingBit</span>(EXTI_Line14);  <span style="color:#64748b">// ② 清标志（必须！）</span>
+        Counter_Sensor_Count++;                 <span style="color:#64748b">// ③ 处理逻辑</span>
+    }
+}</code></pre>
+      <div class="note danger"><span class="t">铁律（面试必问）</span>① <b>先判断标志</b>（多个中断线共用一个 Handler 时区分谁触发的）；② <b>必须清标志</b>（不清 → 一直触发 → 死循环）；③ <b>函数名必须是启动文件注册的名字</b>（EXTI0_IRQHandler / EXTI15_10_IRQHandler…），拼错 → 中断静默失效，编译器不报错。</div>
+    </div>
+  </div>
+
+  <!-- ========== 6. 实战对照 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">6</div>两个实战例程（对照你的工程）</div>
+    <div class="card-body">
+      <table>
+        <tr><th></th><th>1004 对射式红外计次</th><th>1005 旋转编码器计次</th></tr>
+        <tr><td>引脚</td><td>PB14 → EXTI_Line14</td><td>PB0/PB1 → EXTI_Line0/1</td></tr>
+        <tr><td>触发</td><td>下降沿（被挡一下 +1）</td><td>下降沿，中断里读另一相判方向</td></tr>
+        <tr><td>中断号</td><td>EXTI15_10_IRQn（共用）</td><td>EXTI0_IRQn / EXTI1_IRQn</td></tr>
+        <tr><td>Handler</td><td>EXTI15_10_IRQHandler</td><td>EXTI0_IRQHandler / EXTI1_IRQHandler</td></tr>
+      </table>
+      <div class="note key"><span class="t">关键点</span>EXTI 线 0~4 各有一个独立中断号（EXTI0_IRQn…EXTI4_IRQn）；<b>线 5~9 共用 EXTI9_5_IRQn；线 10~15 共用 EXTI15_10_IRQn</b>——共用时必须在 Handler 里判断是哪个线触发的（getITStatus）。</div>
+    </div>
+  </div>
+
+  <!-- ========== 7. 避坑 ========== -->
+  <div class="card">
+    <div class="card-head"><div class="num">!</div>实战坑（EXTI 特供）</div>
+    <div class="card-body">
+      <div class="note danger"><span class="t">① 忘了开 AFIO 时钟</span>GPIO_EXTILineConfig 写不进 → 中断永不触发。<b>症状：编译 0 错误，程序正常跑，就是没反应</b>——最阴的坑，你 1005 踩过。</div>
+      <div class="note danger"><span class="t">② 中断函数名拼错</span>EXTI15_10_IRQHandler 拼成别的 → 中断静默失效，编译器不报错。查启动文件里的名字对照。</div>
+      <div class="note danger"><span class="t">③ 忘了清标志</span>EXTI_ClearITPendingBit 漏了 → 中断标志一直 SET → 反复进入 ISR → 主程序卡死。</div>
+      <div class="note warn"><span class="t">④ NVIC 分组全工程只调一次</span>NVIC_PriorityGroupConfig 重复调用可能导致优先级配置混乱。放在 main 最前面或某个 Init 里一次即可。</div>
+    </div>
+  </div>
+
+  <div class="footer">第 5 节 交互式知识点 · 江科大 STM32 入门教程 · 下一步：第 5 节自测</div>
+</div>
+
+<script>
+/* ===== PPT 结构图高亮 ===== */
+function hi(svgId, cls){
+  const svg = document.getElementById(svgId);
+  // 清除旧高亮
+  svg.querySelectorAll('.grp-src,.grp-core,.grp-gpio,.grp-afio,.grp-exti,.grp-nvic2,.grp-oth').forEach(g=>{
+    g.querySelectorAll('rect').forEach(r=>{ r.style.filter=''; r.style.strokeWidth=''; });
+  });
+  const target = svg.querySelector('.'+cls);
+  if(target){
+    target.querySelectorAll('rect').forEach(r=>{ r.style.filter='brightness(1.2) saturate(1.5)'; r.style.strokeWidth='2.5'; });
+  }
+  // 更新提示
+  const msgId = svgId === 'svg-nvic' ? 'svg-nvic-msg' : 'svg-exti-msg';
+  const msgs = {
+    'svg-nvic': {
+      'grp-src':'中断源：EXTI/TIM/ADC/USART… 各产生中断请求，通过内部线路送到 NVIC',
+      'grp-core':'内核：NVIC（中断调度）与 CPU（执行）都在 Cortex-M3 内核里',
+      'grp-nvic2':'',
+    },
+    'svg-exti': {
+      'grp-gpio':'GPIO 组：每组 16 根线（PA0~15 / PB0~15…），你的 PB14/PB0/PB1 在这里',
+      'grp-afio':'AFIO：中断引脚选择器，决定哪根 GPIO 线接到哪条 EXTI 线（GPIO_EXTILineConfig 的硬件）',
+      'grp-exti':'EXTI：边沿检测器，检测上升/下降沿并产生中断请求（EXTI0~15 共 16 根）',
+      'grp-nvic2':'NVIC：中断调度中心，按优先级决定是否响应、响应顺序',
+      'grp-oth':'其它中断源（PVD/RTC/USB…）与外部中断共用 NVIC，各占一条中断线',
+    },
+  };
+  const m = msgs[svgId] && msgs[svgId][cls];
+  if(m){ document.getElementById(msgId).textContent = m; }
+}
+
+/* ===== 1. 中断流程动画 ===== */
+let irqTimer = null, irqStep = -1;
+const irqText = [
+  '主程序正在 while(1) 刷新 OLED…',
+  '🚨 外部事件！红外被挡 / 按键按下 → 引脚电平跳变 → EXTI 产生中断请求',
+  '🧠 NVIC 检查：这个中断的优先级够高吗？够 → 允许打断当前主程序',
+  '📦 硬件自动保护现场：把 CPU 当前寄存器值压栈（记住"写到哪一行"）',
+  '⚙️ 跳转到中断服务函数 EXTI15_10_IRQHandler：判断标志 → 清标志 → 计数+1',
+  '↩️ 恢复现场：出栈还原寄存器 → 回到主程序被打断的地方继续执行',
+];
+function irqPlay(){
+  irqReset();
+  irqStep = 0;
+  document.getElementById('irq-go').disabled = true;
+  irqTimer = setInterval(()=>{
+    if(irqStep >= 6){ clearInterval(irqTimer); document.getElementById('irq-go').disabled=false; return; }
+    highlight(irqStep);
+    document.getElementById('irq-status').textContent = irqText[irqStep];
+    irqStep++;
+  }, 800);
+}
+function highlight(n){
+  for(let i=0;i<6;i++){
+    document.getElementById('st-'+i).classList.toggle('active', i===n);
+  }
+}
+function irqReset(){
+  clearInterval(irqTimer);
+  irqStep = -1;
+  document.getElementById('irq-go').disabled = false;
+  highlight(-1);
+  document.getElementById('irq-status').textContent = '点「模拟一次按键触发」，看 CPU 的中断五步流程';
+}
+
+/* ===== 2. NVIC 优先级交互 ===== */
+let priActive = null;
+function priPick(el){
+  const p = +el.dataset.p;
+  const st = document.getElementById('pri-status');
+  const rows = document.querySelectorAll('.pri-row');
+  if(priActive === p){
+    priActive = null;
+    rows.forEach(r=>{r.style.borderColor='';r.style.background='';r.querySelector('.badge').textContent='空闲';r.querySelector('.badge').className='badge b-green';});
+    st.textContent = '点击上方两个中断，看谁先执行';
+    return;
+  }
+  rows.forEach(r=>{r.style.borderColor='';r.style.background='';r.querySelector('.badge').textContent='空闲';r.querySelector('.badge').className='badge b-green';});
+  priActive = p;
+  el.style.borderColor = '#7c3aed';
+  el.style.background = '#f5f3ff';
+  const b = el.querySelector('.badge');
+  b.textContent = '正在执行';
+  b.className = 'badge b-red';
+  const other = rows[1-p];
+  const otherB = other.querySelector('.badge');
+  if(p === 0){
+    // 中断A 抢占1响应1；中断B 抢占0响应0 → B 优先级更高
+    otherB.textContent = '等待（抢占更高）';
+    otherB.className = 'badge b-red';
+    st.innerHTML = '中断 A（抢占 1）正在执行时，<b>中断 B（抢占 0）到达</b> → <b style="color:#dc2626">B 抢占打断 A！</b>因为抢占优先级数字越小越高。<br>结果：先执行 B，再回来接着执行 A。';
+  } else {
+    otherB.textContent = '等待（抢占更高）';
+    otherB.className = 'badge b-red';
+    st.innerHTML = '中断 B（抢占 0）正在执行时，<b>中断 A（抢占 1）到达</b> → <b style="color:#059669">A 抢占比不过 B，只能等 B 执行完</b>。<br>结果：B 先执行完，A 再执行。';
+  }
+}
+
+/* ===== 3. 编码器波形 ===== */
+let encCount = 0, encDirVal = 1, encPhase = 0;
+function encWave(){
+  const a = document.getElementById('enc-a');
+  const b = document.getElementById('enc-b');
+  // A 固定方波（周期 60px，高 30 低 30）
+  let dA = 'M40,85 ';
+  let dB = 'M40,145 ';
+  for(let i=0;i<9;i++){
+    const x = 40 + i*60;
+    dA += `H${x+30} V35 H${x+60} `;
+    // B 相位：encPhase 决定 B 相对 A 的偏移（正转滞后 30px，反转超前 30px）
+    const bx = x + 30 + (encDirVal===1 ? 30 : 0) - (encDirVal===-1 ? 30 : 0);
+    const bx2 = x + 60 + (encDirVal===1 ? 30 : 0) - (encDirVal===-1 ? 30 : 0);
+    if(bx >= 40) dB += `H${Math.min(bx,550)} V95 `;
+    if(bx2 >= 40) dB += `H${Math.min(bx2,550)} V145 `;
+  }
+  a.setAttribute('d', dA);
+  b.setAttribute('d', dB);
+  document.getElementById('enc-title').textContent = encDirVal===1 ? '正转（顺时针）：A 上升沿时 B 为低' : '反转（逆时针）：A 上升沿时 B 为高';
+}
+function encDir(d){
+  encDirVal = d;
+  encCount = 0;
+  encPhase = 0;
+  encWave();
+  updateEnc();
+}
+function encStep(){
+  if(encPhase >= 8){ encPhase = 0; }
+  encCount += encDirVal;
+  encPhase++;
+  const mark = document.getElementById('enc-mark');
+  mark.setAttribute('x1', 40 + encPhase*60);
+  mark.setAttribute('x2', 40 + encPhase*60);
+  encWave();
+  updateEnc();
+}
+function updateEnc(){
+  const st = document.getElementById('enc-status');
+  st.textContent = '计数 = ' + encCount;
+  st.style.color = encCount >= 0 ? '#059669' : '#dc2626';
+}
+function encReset(){
+  encCount = 0; encPhase = 0; encDirVal = 1;
+  encWave(); updateEnc();
+}
+encWave(); updateEnc();
+</script>
+</body>
+</html>

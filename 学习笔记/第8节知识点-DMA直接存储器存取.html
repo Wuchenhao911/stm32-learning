@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第8节 知识点 · DMA 直接存储器存取（结构图精讲版）</title>
+<style>
+:root{--bg:#eef3fb;--card:#fff;--primary:#2563eb;--accent:#0ea5e9;--text:#1e293b;--muted:#64748b;--line:#e2e8f0;--code-bg:#0f172a;--code-text:#e2e8f0;--code-k:#93c5fd;--code-f:#86efac;--code-c:#94a3b8;--code-n:#fbbf24;--green:#16a34a;--red:#dc2626;--warn-bg:#fff7ed;--warn-b:#f59e0b;--ok-bg:#ecfdf5;--ok-b:#10b981;--purple:#7e22ce}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);line-height:1.7;padding:0 0 60px}
+header.hero{background:linear-gradient(120deg,#1d4ed8,#0ea5e9);color:#fff;padding:26px 24px 20px;text-align:center}
+header.hero h1{font-size:24px;letter-spacing:1px;margin-bottom:6px}
+header.hero p{opacity:.92;font-size:13.5px}
+.container{max-width:940px;margin:0 auto;padding:0 16px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:16px 0 8px;position:sticky;top:0;background:var(--bg);padding:9px 0;z-index:40;border-bottom:1px solid var(--line)}
+.tab{cursor:pointer;border:none;background:#fff;border:1px solid var(--line);color:var(--muted);padding:7px 12px;border-radius:20px;font-size:12.5px;font-weight:600;transition:.2s}
+.tab:hover{border-color:var(--accent);color:var(--accent)}
+.tab.active{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 4px 12px rgba(37,99,235,.3)}
+.panel{display:none;animation:fade .35s}.panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:12px 0;box-shadow:0 2px 10px rgba(15,23,42,.05);overflow:hidden}
+.card-h{display:flex;align-items:center;gap:10px;padding:13px 18px;cursor:pointer;user-select:none;font-weight:700;font-size:15px}
+.card-h:hover{background:#f1f6ff}
+.card-h .num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
+.card-h .arrow{margin-left:auto;transition:transform .3s;color:var(--muted)}
+.card.open .card-h .arrow{transform:rotate(90deg)}
+.card-b{max-height:0;overflow:hidden;transition:max-height .5s ease}.card.open .card-b{max-height:3400px}
+.card-b-inner{padding:4px 18px 18px}
+h3.sec{font-size:14.5px;color:var(--primary);margin:13px 0 7px;padding-left:9px;border-left:4px solid var(--accent)}
+ul,ol{margin:6px 0 6px 20px}li{margin:4px 0}
+b{color:#0f172a}.muted{color:var(--muted);font-size:13px}
+pre{background:var(--code-bg);color:var(--code-text);border-radius:10px;padding:12px 14px;overflow:auto;font-size:12.5px;line-height:1.6;margin:9px 0}
+code{font-family:"SFMono-Regular",Consolas,monospace}
+.c{color:var(--code-c)}.f{color:var(--code-f)}.k{color:var(--code-k)}.n{color:var(--code-n)}
+.code-link{cursor:pointer;transition:.15s;border-radius:3px;padding:0 3px;display:inline-block}
+.code-link:hover{background:#fde68a}.code-link.active{background:#ef4444;color:#fff;box-shadow:0 0 0 3px rgba(239,68,68,.3)}
+.note{border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13.5px}
+.note .t{font-weight:700;display:block;margin-bottom:3px}
+.key{background:#eff6ff;border-left:4px solid var(--primary)}
+.ok{background:var(--ok-bg);border-left:4px solid var(--ok-b)}
+.danger{background:var(--warn-bg);border-left:4px solid var(--warn-b)}
+.purple{background:#faf5ff;border-left:4px solid var(--purple)}
+.tip{position:relative;border-bottom:1px dashed var(--primary);color:var(--primary);cursor:help;font-weight:600}
+.tip::after{content:attr(data-tip);position:absolute;left:50%;bottom:130%;transform:translateX(-50%) scale(.9);background:#0f172a;color:#fff;font-size:12px;font-weight:400;line-height:1.5;width:max-content;max-width:240px;padding:7px 10px;border-radius:7px;opacity:0;pointer-events:none;transition:.18s;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.tip:hover::after{opacity:1;transform:translateX(-50%) scale(1)}
+.struct-wrap{background:linear-gradient(135deg,#f8faff,#eef5ff);border:2px solid var(--primary);border-radius:14px;padding:14px;margin:10px 0;position:relative;overflow:hidden}
+.struct-wrap::before{content:"PPT 第 103 页 · DMA基本结构";position:absolute;top:6px;right:10px;background:var(--primary);color:#fff;font-size:11px;padding:3px 9px;border-radius:9px;font-weight:600}
+.struct-svg{width:100%;height:auto;display:block}
+.struct-svg .mod{cursor:pointer;transition:filter .2s;transform-box:fill-box;transform-origin:center}
+.struct-svg .mod:hover{filter:drop-shadow(0 0 8px rgba(14,165,233,.7)) brightness(1.08)}
+.struct-svg .mod.active{filter:drop-shadow(0 0 12px #ef4444) brightness(1.15)}
+.struct-svg text{font-family:-apple-system,"Segoe UI",sans-serif;font-weight:600;pointer-events:none}
+.struct-svg .wire{stroke:#475569;stroke-width:1.6;fill:none}
+.struct-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.struct-info .item{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px}
+.struct-info .item b{color:var(--primary);display:block;font-size:12px;margin-bottom:2px}
+@media(max-width:640px){.struct-info{grid-template-columns:1fr}}
+.mem-table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+.mem-table th{background:#f1f6ff;color:var(--primary);padding:8px;border:1px solid var(--line);font-weight:700}
+.mem-table td{padding:8px;border:1px solid var(--line);text-align:center;transition:.15s}
+.mem-table tr{cursor:pointer}.mem-table tr:hover td{background:#fef3c7}.mem-table tr.sel td{background:#fed7aa;color:#7c2d12;font-weight:700}
+.mem-addr{background:#0f172a;color:#a7f3d0;font-family:monospace;padding:2px 7px;border-radius:5px;font-size:12px}
+.demo-box{background:#0f172a;border-radius:11px;padding:14px;margin:10px 0;color:#cbd5e1}
+.demo-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.demo-cell{min-width:56px;padding:6px 8px;border:1px solid #475569;border-radius:5px;text-align:center;font-family:monospace;font-size:13px;color:#94a3b8}
+.demo-cell.hot{background:#f59e0b;color:#0f172a;border-color:#d97706;box-shadow:0 0 8px rgba(245,158,11,.6)}
+.demo-cell.filled{background:#22c55e;color:#fff;border-color:#16a34a}
+.demo-arrow{font-size:18px;color:#f59e0b}
+.demo-meta{font-size:12.5px;color:#94a3b8;margin:4px 0}
+.demo-meta b{color:#22d3ee}
+.calc{background:#f8fafc;border:1px dashed var(--line);border-radius:12px;padding:13px;margin:10px 0}
+.calc .row{display:flex;align-items:center;gap:9px;margin:6px 0;flex-wrap:wrap}
+.calc label{flex:0 0 110px;font-weight:600;font-size:13px}
+.calc select,.calc input[type=number]{padding:5px 8px;border:1px solid var(--line);border-radius:7px;font-size:13.5px}
+.calc input[type=number]{width:100px}
+.calc .out{flex:1;min-width:160px;background:#0f172a;color:#a7f3d0;font-family:monospace;padding:7px 10px;border-radius:7px;font-size:13px}
+.calc .out b{color:#fff}
+table{width:100%;border-collapse:collapse;margin:9px 0;font-size:12.5px}
+th,td{border:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{background:#f1f6ff;color:var(--primary);font-weight:700}
+.btn{border:none;border-radius:7px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s}
+.btn-p{background:var(--primary);color:#fff}.btn-p:hover{background:#1d4ed8}
+.btn-p:disabled{background:#cbd5e1;cursor:not-allowed}
+.btn-s{background:#fff;border:1px solid var(--line);color:var(--muted)}.btn-s:hover{border-color:var(--accent);color:var(--accent)}
+.step-nav{display:flex;justify-content:space-between;margin-top:9px}
+.quiz-q{background:#fff;border:1px solid var(--line);border-radius:11px;padding:13px;margin:10px 0;box-shadow:0 2px 8px rgba(15,23,42,.04)}
+.quiz-q .q{font-weight:700;margin-bottom:8px;font-size:13.5px}
+.quiz-q .q .tag{display:inline-block;background:#eff6ff;color:var(--primary);font-size:10.5px;padding:1px 6px;border-radius:4px;margin-right:6px;font-weight:600}
+.opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#f8fafc;border-radius:7px;padding:8px 11px;margin:5px 0;cursor:pointer;font-size:13px;transition:.15s}
+.opt:hover{border-color:var(--accent)}
+.opt.correct{background:#ecfdf5;border-color:var(--green);color:#065f46}
+.opt.wrong{background:#fef2f2;border-color:var(--red);color:#991b1b}
+.opt .mk{font-weight:700;margin-right:6px}
+.exp{font-size:12px;color:var(--muted);margin-top:6px;padding:7px 10px;background:#f8fafc;border-radius:7px;display:none}
+.exp.show{display:block}
+.fill-in{width:130px;padding:5px 8px;border:1px solid var(--line);border-radius:7px;font-size:13px}
+.quiz-score{position:sticky;bottom:12px;background:var(--primary);color:#fff;text-align:center;padding:10px;border-radius:11px;font-weight:700;box-shadow:0 6px 18px rgba(37,99,235,.35);margin-top:14px}
+</style>
+</head>
+<body>
+<header class="hero">
+<h1>第8节 · DMA 直接存储器存取（结构图精讲版）</h1>
+<p>江科大 STM32 入门教程 8-1 ~ 8-4 ｜ 围绕 PPT 第 103 页「DMA基本结构」讲透 DMA</p>
+</header>
+<div class="container">
+<div class="tabs" id="tabs">
+<button class="tab active" data-t="s103">结构图</button>
+<button class="tab" data-t="mem">存储器映像</button>
+<button class="tab" data-t="demo">转运演示</button>
+<button class="tab" data-t="link">代码↔结构</button>
+<button class="tab" data-t="adc">ADC+DMA</button>
+<button class="tab" data-t="other">其他要点</button>
+<button class="tab" data-t="qz">自测</button>
+</div>
+
+<div class="panel active" id="s103">
+<div class="card open">
+<div class="card-h"><span class="num">★</span> PPT 第 103 页「DMA基本结构」结构图（点击模块看讲解） <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<p class="muted" style="margin-bottom:8px">下图根据 PPT 第 103 页「DMA基本结构」重绘并扩展，<b>点任意模块高亮 + 在下方查看说明</b>。DMA 的本质：CPU 把「从哪搬、搬到哪、搬几个、怎么搬」配置好后，DMA 硬件就自己搬运，<b>搬完才打断 CPU 一下</b>。</p>
+<div class="struct-wrap">
+<svg class="struct-svg" viewBox="0 0 920 470" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/></marker></defs>
+
+<!-- 左侧：外设寄存器 -->
+<g class="mod" data-m="peri" id="m-peri">
+<rect x="25" y="95" width="150" height="140" rx="7" fill="#fef3c7" stroke="#d97706" stroke-width="1.6"/>
+<text x="100" y="117" text-anchor="middle" fill="#92400e" font-size="12.5" font-weight="700">外设寄存器</text>
+<text x="100" y="138" text-anchor="middle" fill="#92400e" font-size="9">(DataA / ADC_DR)</text>
+<text x="100" y="155" text-anchor="middle" fill="#92400e" font-size="9">─────</text>
+<text x="100" y="172" text-anchor="middle" fill="#92400e" font-size="9">起始地址：可配</text>
+<text x="100" y="188" text-anchor="middle" fill="#92400e" font-size="9">数据宽度：8/16/32</text>
+<text x="100" y="204" text-anchor="middle" fill="#92400e" font-size="9">地址自增：可开/关</text>
+</g>
+
+<!-- 右侧：存储器 -->
+<g class="mod" data-m="mem" id="m-mem">
+<rect x="745" y="95" width="150" height="140" rx="7" fill="#bbf7d0" stroke="#15803d" stroke-width="1.6"/>
+<text x="820" y="117" text-anchor="middle" fill="#14532d" font-size="12.5" font-weight="700">存储器</text>
+<text x="820" y="138" text-anchor="middle" fill="#14532d" font-size="9">(DataB / ADValue[])</text>
+<text x="820" y="155" text-anchor="middle" fill="#14532d" font-size="9">─────</text>
+<text x="820" y="172" text-anchor="middle" fill="#14532d" font-size="9">SRAM / Flash</text>
+<text x="820" y="188" text-anchor="middle" fill="#14532d" font-size="9">数据宽度：8/16/32</text>
+<text x="820" y="204" text-anchor="middle" fill="#14532d" font-size="9">地址自增：可开/关</text>
+</g>
+
+<!-- 中间：方向 + 传输控制 -->
+<g class="mod" data-m="dir" id="m-dir">
+<rect x="210" y="95" width="150" height="140" rx="7" fill="#e0e7ff" stroke="#4338ca" stroke-width="1.6"/>
+<text x="285" y="117" text-anchor="middle" fill="#3730a3" font-size="12.5" font-weight="700">方向 DIR</text>
+<text x="285" y="150" text-anchor="middle" fill="#4338ca" font-size="11">外设 → 存储器</text>
+<text x="285" y="168" text-anchor="middle" fill="#4338ca" font-size="11">或</text>
+<text x="285" y="186" text-anchor="middle" fill="#4338ca" font-size="11">存储器 → 外设</text>
+<text x="285" y="215" text-anchor="middle" fill="#3730a3" font-size="9">DMA_DIR 选择</text>
+</g>
+
+<!-- 底部一排：传输计数器 / 自动重装 / M2M / 触发 / 开关 -->
+<g class="mod" data-m="cnt" id="m-cnt">
+<rect x="210" y="300" width="130" height="46" rx="6" fill="#fde68a" stroke="#a16207" stroke-width="1.5"/>
+<text x="275" y="320" text-anchor="middle" fill="#713f12" font-size="11.5" font-weight="700">传输计数器</text>
+<text x="275" y="337" text-anchor="middle" fill="#713f12" font-size="9">剩余搬运次数 CNDTR</text>
+</g>
+<g class="mod" data-m="rel" id="m-rel">
+<rect x="365" y="300" width="130" height="46" rx="6" fill="#fde68a" stroke="#a16207" stroke-width="1.5"/>
+<text x="430" y="320" text-anchor="middle" fill="#713f12" font-size="11.5" font-weight="700">自动重装器</text>
+<text x="430" y="337" text-anchor="middle" fill="#713f12" font-size="9">循环模式 Circular</text>
+</g>
+<g class="mod" data-m="m2m" id="m-m2m">
+<rect x="520" y="300" width="130" height="46" rx="6" fill="#fde68a" stroke="#a16207" stroke-width="1.5"/>
+<text x="585" y="320" text-anchor="middle" fill="#713f12" font-size="11.5" font-weight="700">M2M 选择</text>
+<text x="585" y="337" text-anchor="middle" fill="#713f12" font-size="9">1=存储器到存储器</text>
+</g>
+<g class="mod" data-m="hwtrig" id="m-hwtrig">
+<rect x="210" y="390" width="130" height="40" rx="6" fill="#fbcfe8" stroke="#be185d" stroke-width="1.5"/>
+<text x="275" y="409" text-anchor="middle" fill="#831843" font-size="11" font-weight="700">硬件触发</text>
+<text x="275" y="423" text-anchor="middle" fill="#be185d" font-size="9">ADC/串口等请求</text>
+</g>
+<g class="mod" data-m="swtrig" id="m-swtrig">
+<rect x="365" y="390" width="130" height="40" rx="6" fill="#fbcfe8" stroke="#be185d" stroke-width="1.5"/>
+<text x="430" y="409" text-anchor="middle" fill="#831843" font-size="11" font-weight="700">软件触发</text>
+<text x="430" y="423" text-anchor="middle" fill="#be185d" font-size="9">M2M=1 时使用</text>
+</g>
+<g class="mod" data-m="sw" id="m-sw">
+<rect x="745" y="390" width="150" height="40" rx="6" fill="#fbcfe8" stroke="#be185d" stroke-width="1.5"/>
+<text x="820" y="409" text-anchor="middle" fill="#831843" font-size="11" font-weight="700">开关控制 EN</text>
+<text x="820" y="423" text-anchor="middle" fill="#be185d" font-size="9">DMA_Cmd 使能</text>
+</g>
+
+<!-- 传输方向箭头（中央总线） -->
+<path class="wire" d="M 175 165 L 210 165" marker-end="url(#arr)"/>
+<path class="wire" d="M 360 165 L 745 165" marker-end="url(#arr)"/>
+<path class="wire" d="M 745 165 L 360 165" stroke-dasharray="3 3" marker-end="url(#arr)"/>
+<text x="555" y="180" text-anchor="middle" fill="#4338ca" font-size="10">双向搬运（由 DIR 定方向）</text>
+
+<!-- 控制线：计数/重装/触发 → 方向 -->
+<path class="wire" d="M 275 300 L 275 235" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+<path class="wire" d="M 430 300 L 300 235" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+<path class="wire" d="M 275 390 L 275 346" marker-end="url(#arr)"/>
+<path class="wire" d="M 430 390 L 430 346" marker-end="url(#arr)"/>
+<path class="wire" d="M 585 346 L 585 235" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+<path class="wire" d="M 820 390 L 820 235" stroke-dasharray="3 2" marker-end="url(#arr)"/>
+<text x="95" y="255" text-anchor="middle" fill="#64748b" font-size="9">DMA1_Channel1 通道</text>
+
+<text x="460" y="462" text-anchor="middle" fill="#64748b" font-size="10">数据流：外设寄存器 ↔ 存储器（SRAM/Flash），由 DIR 定方向；传输计数器记剩余次数，自动重装器循环模式可循环，M2M=1 用软件触发，否则等外设硬件请求触发；EN 开关总控</text>
+</svg>
+</div>
+<div class="struct-info" id="structInfo">
+<div class="item"><b>提示</b>请<strong>点上面任一模块</strong>查看该模块的作用、对应代码与寄存器。</div>
+<div class="item"><b>建议</b>看完后切到「转运演示」tab 看 DataA→DataB 怎么搬；再切「代码↔结构」点代码行联动。</div>
+</div>
+</div></div>
+</div>
+
+<div class="card open">
+<div class="card-h"><span class="num">①</span> DMA 是什么：CPU 的"搬运工" <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<p>DMA（Direct Memory Access）<b>直接存储器存取</b>：提供<b>外设 ↔ 存储器</b>或<b>存储器 ↔ 存储器</b>之间的高速数据传输，<b>无须 CPU 干预</b>。</p>
+<ul>
+<li><b>没有 DMA 时</b>：CPU 每次搬一个数据都要「读内存 → 写寄存器 → 再读」循环，搬 7 个字节 CPU 忙 7 次</li>
+<li><b>有 DMA 后</b>：CPU 配置好「源地址、目的地址、长度、方向」，然后<b>干自己的事</b>；DMA 硬件自己搬完，搬完用<b>传输完成中断（TC）</b>通知 CPU</li>
+</ul>
+<div class="note key"><span class="t">资源（PPT 100）</span>F103 有 <b>12 个 DMA 通道</b>：DMA1（7 个）+ DMA2（5 个）。<b>C8T6 只有 DMA1</b>（7 个通道）。每个通道都支持软件触发和特定的硬件触发（每个通道固定绑定几个外设请求）。</div>
+</div></div>
+</div>
+
+<div class="card">
+<div class="card-h"><span class="num">②</span> 外设侧 vs 存储器侧：DMA 只认「地址」 <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<p>结构图左右两侧分别是 DMA 搬运的<b>两端</b>，每端都要配 3 个参数：</p>
+<table>
+<tr><th>参数</th><th>外设侧</th><th>存储器侧</th><th>示例（1014）</th></tr>
+<tr><td><b>起始地址</b></td><td>外设寄存器地址（如 ADC_DR、DataA）</td><td>存储器地址（DataB、ADValue[]）</td><td><code>DMA_PeripheralBaseAddr=DataA</code> / <code>DMA_MemoryBaseAddr=DataB</code></td></tr>
+<tr><td><b>数据宽度</b></td><td>8/16/32 位</td><td>8/16/32 位</td><td>Byte（uint8_t）</td></tr>
+<tr><td><b>地址自增</b></td><td>PeripheralInc 开/关</td><td>MemoryInc 开/关</td><td>都开（数组连续地址）</td></tr>
+</table>
+<div class="note key"><span class="t">为什么"地址自增"这么重要</span>搬数组时源/目的地址要<b>自动 +1（或 +2/+4）</b>，否则每次都搬同一个地址、只覆盖第一个元素。ADC_DR 这种<b>单个寄存器</b>则必须<b>关闭</b>外设侧自增。</div>
+</div></div>
+</div>
+
+<div class="card">
+<div class="card-h"><span class="num">③</span> 传输计数器 + 自动重装器：搬几个？搬完怎么办？ <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<ul>
+<li><b>传输计数器（CNDTR）</b>：剩余要搬的次数，每搬一次 -1，<b>减到 0 传输结束</b>，置位传输完成标志 TC</li>
+<li><b>自动重装器</b>：<b>Normal 模式</b>：搬完 CNDTR=0 就停（要再次搬运需重新设 CNDTR）；<b>Circular 模式</b>：搬完自动把 CNDTR 重装回初值，<b>循环不停</b></li>
+</ul>
+<div class="note danger"><span class="t">Normal 模式的大坑</span>Normal 模式下搬完一次，CNDTR 变 0，<b>DMA 通道自动禁用</b>。第二次搬运必须：<code>DMA_Cmd(Disable)</code> → <code>DMA_SetCurrDataCounter(重设计数)</code> → <code>DMA_Cmd(Enable)</code>。这就是 1014 里 MyDMA_Transfer 每次都重设的原因。</div>
+</div></div>
+</div>
+
+<div class="card">
+<div class="card-h"><span class="num">④</span> 触发方式：什么时候开始搬？ <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<ul>
+<li><b>软件触发</b>：<b>M2M=1</b>（存储器到存储器）时用。配置完 DMA_Cmd(ENABLE) 后立即开始搬运。1014 的 DataA→DataB 就是这种</li>
+<li><b>硬件触发</b>：<b>M2M=0</b>（外设↔存储器）时用。要等外设发出<b>请求信号</b>才搬一次。如 ADC 转换完成 EOC → 自动触发 DMA 把 ADC_DR 搬走；串口收到数据 RXNE → 自动触发 DMA 搬运</li>
+</ul>
+<div class="note key"><span class="t">ADC+DMA 为什么绝配</span>ADC 多通道扫描，数据寄存器只有 1 个、会覆盖 —— 让 DMA 在每次 EOC 后把 ADC_DR 自动搬进数组，<b>CPU 一次都不用管</b>。这正是 107 页第二个实验。</div>
+</div></div>
+</div>
+
+<div class="card">
+<div class="card-h"><span class="num">⑤</span> 开关控制 EN：最后的开关 <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<p>结构图右下角<b>开关控制</b>对应 <code>DMA_Cmd(DMAx_Channelx, ENABLE/DISABLE)</code>。</p>
+<pre><code><span class="f">DMA_Cmd</span>(DMA1_Channel1, DISABLE);                 <span class="c">// 先关（改配置前必须关）</span>
+<span class="f">DMA_SetCurrDataCounter</span>(DMA1_Channel1, MYDMA_size); <span class="c">// 重设传输计数器</span>
+<span class="f">DMA_Cmd</span>(DMA1_Channel1, ENABLE);                  <span class="c">// 再开（开始搬）</span></code></pre>
+<div class="note danger"><span class="t">铁律</span><b>改 DMA 配置前必须先 DISABLE</b>，改完再 ENABLE。在使能状态下改配置会导致意外行为。</div>
+</div></div>
+</div>
+</div>
+
+<div class="panel" id="mem">
+<div class="card open">
+<div class="card-h"><span class="num">存储器映像</span>（PPT 101 · 点行看用途） <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<p class="muted">DMA 搬运的就是这些地址空间之间的数据。点表格行查看详情。</p>
+<table class="mem-table" id="memTable">
+<tr><th>类型</th><th>起始地址</th><th>存储器</th><th>用途</th></tr>
+<tr data-m="flash" data-a="0x0800 0000"><td>ROM</td><td><span class="mem-addr">0x0800 0000</span></td><td>程序存储器 Flash</td><td>存储 C 语言编译后的程序代码</td></tr>
+<tr data-m="sys" data-a="0x1FFF F000"><td>ROM</td><td><span class="mem-addr">0x1FFF F000</span></td><td>系统存储器</td><td>BootLoader，用于串口下载</td></tr>
+<tr data-m="opt" data-a="0x1FFF F800"><td>ROM</td><td><span class="mem-addr">0x1FFF F800</span></td><td>选项字节</td><td>独立于程序代码的配置参数</td></tr>
+<tr data-m="sram" data-a="0x2000 0000"><td>RAM</td><td><span class="mem-addr">0x2000 0000</span></td><td>运行内存 SRAM</td><td>运行过程中的临时变量（DataA/DataB 在这）</td></tr>
+<tr data-m="peri" data-a="0x4000 0000"><td>RAM</td><td><span class="mem-addr">0x4000 0000</span></td><td>外设寄存器</td><td>各外设配置参数（ADC_DR 在这）</td></tr>
+<tr data-m="core" data-a="0xE000 0000"><td>RAM</td><td><span class="mem-addr">0xE000 0000</span></td><td>内核外设寄存器</td><td>NVIC/SysTick 等内核外设</td></tr>
+</table>
+<div id="memInfo" class="note key" style="display:none"></div>
+<div class="note ok"><span class="t">DMA 常用搬运对</span>① <b>SRAM → SRAM</b>（数组复制，1014） ② <b>外设 → SRAM</b>（ADC_DR → 数组，107） ③ <b>SRAM → 外设</b>（数组 → 串口发送数据寄存器）</div>
+</div></div>
+</div>
+</div>
+
+<div class="panel" id="demo">
+<div class="card open">
+<div class="card-h"><span class="num">转运演示</span> 看 DataA → DataB 怎么搬（点击开始） <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<p class="muted">模拟工程 1014：<code>uint8_t DataA[]={0x01,0x02,0x03,0x04}</code> → <code>DataB[4]</code>，软件触发 + M2M 模式，一次搬 1 字节，共 4 次。</p>
+<div class="demo-box">
+<div class="demo-meta">传输计数器 CNDTR：<b id="dCnt">4</b> ｜ 当前搬运第 <b id="dIdx">0</b> 字节</div>
+<div class="demo-row">
+<span style="color:#94a3b8">DataA</span>
+<div class="demo-cell" id="a0">0x01</div><div class="demo-cell" id="a1">0x02</div><div class="demo-cell" id="a2">0x03</div><div class="demo-cell" id="a3">0x04</div>
+<span class="demo-arrow">➜</span>
+<span style="color:#94a3b8">DataB</span>
+<div class="demo-cell" id="b0">—</div><div class="demo-cell" id="b1">—</div><div class="demo-cell" id="b2">—</div><div class="demo-cell" id="b3">—</div>
+</div>
+<div class="demo-meta" id="dLog" style="margin-top:8px">点击「开始传输」→ 观察：每次从 DataA 读 1 字节 → 写入 DataB → CNDTR 减 1 → 地址自增 → 4 次后置 TC 标志。</div>
+<div class="step-nav" style="margin-top:10px">
+<button class="btn btn-s" id="dReset">↺ 重置</button>
+<button class="btn btn-p" id="dStart">▶ 开始传输</button>
+<button class="btn btn-s" id="dStep">单步（搬1字节）</button>
+</div>
+</div>
+<div class="note key"><span class="t">看完动画你就懂了</span>①② 每次搬 <b>1 个数据宽度</b>（Byte）③ 每搬一次 <b>CNDTR-1</b> ④ 源/目的地址 <b>自动 +1</b>（MemoryInc/PeripheralInc=Enable）⑤ 4 次后 <b>TC=1</b>，Normal 模式自动停止，需重设 CNDTR 再搬。</div>
+</div></div>
+</div>
+</div>
+
+<div class="panel" id="link">
+<div class="card open">
+<div class="card-h"><span class="num">代码↔结构</span> 一行代码 = 结构图上一个模块（工程 1014/DMA.c） <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<p class="muted">点代码行 → 高亮结构图模块；点结构图模块 → 高亮代码。</p>
+<pre><code><span class="c">// MYDMA_Init：把结构图「两侧地址 + 中间控制」全部配好</span>
+<span class="k">void</span> <span class="f">MYDMA_Init</span>(uint32_t Addr_A, uint32_t Addr_B, uint16_t Size)
+{
+    MYDMA_size = Size;
+    <span class="code-link" data-link="peri">RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);</span>  <span class="c">// 开 DMA1 时钟（AHB 总线！）</span>
+    DMA_InitTypeDef DMA_InitStructure;
+
+    <span class="c">// 左侧：外设侧配置</span>
+    <span class="code-link" data-link="peri">DMA_InitStructure.DMA_PeripheralBaseAddr = Addr_A;</span>   <span class="c">// 外设地址 = DataA</span>
+    <span class="code-link" data-link="size">DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;</span> <span class="c">// 数据宽度 8位</span>
+    <span class="code-link" data-link="inc">DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Enable;</span> <span class="c">// 地址自增</span>
+
+    <span class="c">// 右侧：存储器侧配置</span>
+    <span class="code-link" data-link="mem">DMA_InitStructure.DMA_MemoryBaseAddr = Addr_B;</span>      <span class="c">// 存储器地址 = DataB</span>
+    <span class="code-link" data-link="size">DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;</span>
+    <span class="code-link" data-link="inc">DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;</span>
+
+    <span class="c">// 中间：方向 + 计数 + 重装 + M2M</span>
+    <span class="code-link" data-link="dir">DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;</span>  <span class="c">// 外设是源（外设→存储器）</span>
+    <span class="code-link" data-link="cnt">DMA_InitStructure.DMA_BufferSize = Size;</span>           <span class="c">// 传输计数器初值 = 4</span>
+    <span class="code-link" data-link="rel">DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;</span>      <span class="c">// 普通模式（搬完停）</span>
+    <span class="code-link" data-link="m2m">DMA_InitStructure.DMA_M2M = DMA_M2M_Enable;</span>       <span class="c">// 存储器到存储器 → 软件触发</span>
+    DMA_InitStructure.DMA_Priority = DMA_Priority_Medium;
+
+    <span class="code-link" data-link="peri">DMA_Init(DMA1_Channel1, &amp;DMA_InitStructure);</span>      <span class="c">// 全部写进通道1</span>
+    <span class="code-link" data-link="sw">DMA_Cmd(DMA1_Channel1, DISABLE);</span>                 <span class="c">// 开关控制：先关</span>
+}
+
+<span class="c">// MyDMA_Transfer：开关控制 + 重设计数 → 软件触发搬运 → 等 TC</span>
+<span class="k">void</span> <span class="f">MyDMA_Transfer</span>(<span class="k">void</span>)
+{
+    <span class="code-link" data-link="sw">DMA_Cmd(DMA1_Channel1, DISABLE);</span>
+    <span class="code-link" data-link="cnt">DMA_SetCurrDataCounter(DMA1_Channel1, MYDMA_size);</span>  <span class="c">// 重装传输计数器</span>
+    <span class="code-link" data-link="sw">DMA_Cmd(DMA1_Channel1, ENABLE);</span>                  <span class="c">// 开 → M2M 立即开始搬</span>
+    <span class="k">while</span>(<span class="code-link" data-link="tc">DMA_GetFlagStatus(DMA1_FLAG_TC1)</span> == RESET); <span class="c">// 等传输完成标志</span>
+    <span class="code-link" data-link="tc">DMA_ClearFlag(DMA1_FLAG_TC1);</span>                  <span class="c">// 清标志</span>
+}</code></pre>
+<div class="note ok"><span class="t">对应关系</span>两侧地址（PeripheralBaseAddr=DataA / MemoryBaseAddr=DataB）→ 数据宽度/自增 → DIR 方向 → 传输计数器 BufferSize/SetCurrDataCounter → 自动重装 Normal → M2M 软件触发 → DMA_Cmd 开关控制 → 等 TC 标志。<b>整个结构图从左到右、从下到上全覆盖</b>。</div>
+</div></div>
+</div>
+</div>
+
+<div class="panel" id="adc">
+<div class="card open">
+<div class="card-h"><span class="num">ADC 扫描 + DMA</span>（PPT 107 · 多通道数据不覆盖的关键） <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<p>第二个实验：ADC 规则组扫描 7 个通道（通道0~6），结果由 DMA 自动搬到 <code>uint16_t ADValue[7]</code>。</p>
+<div class="demo-box">
+<svg viewBox="0 0 700 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+<defs><marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/></marker></defs>
+<rect x="20" y="35" width="120" height="50" rx="6" fill="#bbf7d0" stroke="#15803d"/>
+<text x="80" y="55" text-anchor="middle" font-size="11" fill="#14532d">ADC 规则组</text>
+<text x="80" y="72" text-anchor="middle" font-size="9" fill="#15803d">7 通道扫描</text>
+<path d="M 140 60 L 190 60" stroke="#334155" stroke-width="1.5" marker-end="url(#aa)"/>
+<rect x="190" y="35" width="70" height="50" rx="6" fill="#fde68a" stroke="#a16207"/>
+<text x="225" y="62" text-anchor="middle" font-size="12" fill="#713f12" font-weight="700">ADC_DR</text>
+<path d="M 260 60 L 310 60" stroke="#334155" stroke-width="1.5" marker-end="url(#aa)"/>
+<text x="285" y="50" text-anchor="middle" font-size="9" fill="#7e22ce">EOC→请求</text>
+<rect x="310" y="35" width="90" height="50" rx="6" fill="#e9d5ff" stroke="#7e22ce"/>
+<text x="355" y="55" text-anchor="middle" font-size="11" fill="#581c87" font-weight="700">DMA 通道</text>
+<text x="355" y="72" text-anchor="middle" font-size="9" fill="#7e22ce">硬件触发</text>
+<path d="M 400 60 L 450 60" stroke="#334155" stroke-width="1.5" marker-end="url(#aa)"/>
+<rect x="450" y="35" width="230" height="50" rx="6" fill="#dbeafe" stroke="#2563eb"/>
+<text x="565" y="55" text-anchor="middle" font-size="11" fill="#1e3a8a">ADValue[0] ~ [6]</text>
+<text x="565" y="72" text-anchor="middle" font-size="9" fill="#2563eb">uint16_t 数组（SRAM）</text>
+<text x="350" y="115" text-anchor="middle" fill="#64748b" font-size="10">ADC 每次转换完 → EOC → 自动触发 DMA 搬走 ADC_DR → 地址自增写入 ADValue[i] → 7 次搬完一轮</text>
+</svg>
+</div>
+<p>关键差异（对比 1014）：</p>
+<table>
+<tr><th>参数</th><th>1014 数据转运</th><th>ADC+DMA</th></tr>
+<tr><td>外设地址</td><td>DataA（SRAM）</td><td><b>ADC_DR</b>（外设寄存器）</td></tr>
+<tr><td>存储器地址</td><td>DataB</td><td>ADValue[]</td></tr>
+<tr><td>方向 DIR</td><td>PeripheralSRC</td><td>PeripheralSRC（外设→存储器）</td></tr>
+<tr><td>M2M</td><td>1（软件触发）</td><td><b>0</b>（ADC 硬件触发）</td></tr>
+<tr><td>数据宽度</td><td>Byte</td><td><b>HalfWord（16位，ADC 结果）</b></td></tr>
+<tr><td>外设侧自增</td><td>开</td><td><b>关（ADC_DR 是单个寄存器！）</b></td></tr>
+<tr><td>循环</td><td>Normal</td><td><b>Circular（连续扫描循环搬）</b></td></tr>
+</table>
+<div class="note danger"><span class="t">ADC+DMA 三处必须配对</span>① <b>ADC_DR 外设侧自增必须关</b>（否则地址乱跳）② 数据宽度 <b>16 位</b>（ADC 结果 12 位放半字）③ DMA 请求由 <b>ADC 硬件触发</b>（M2M=0）+ ADC_ITConfig 里配 <code>ADC_DMACmd(ADC1, ENABLE)</code> 开启 ADC 的 DMA 请求输出。</div>
+</div></div>
+</div>
+</div>
+
+<div class="panel" id="other">
+<div class="card open">
+<div class="card-h"><span class="num">其他要点</span> 数据宽度与对齐、通道、坑 <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<h3 class="sec">数据宽度与对齐（PPT 105）</h3>
+<p>DMA 每端的数据宽度可独立设 8/16/32 位。宽度不同时对齐规则：</p>
+<ul>
+<li>源 8 位 → 目的 16 位：高位补 0</li>
+<li>源 16 位 → 目的 8 位：<b>只保留低 8 位</b>（高位丢弃）</li>
+<li>宽度一致（如两边都 16 位）：直接搬，无对齐问题</li>
+</ul>
+<div class="note key"><span class="t">结论</span>最省心：<b>两端宽度设成一样</b>。ADC 12 位结果用 <code>uint16_t</code> 数组 + HalfWord 宽度。</div>
+
+<h3 class="sec">DMA1 通道与请求映射（F103）</h3>
+<table>
+<tr><th>通道</th><th>可服务的外设请求（部分）</th></tr>
+<tr><td>CH1</td><td>ADC1、TIM2_CH3、TIM4_CH1</td></tr>
+<tr><td>CH2</td><td>USART3_TX、TIM1_CH1、TIM2_CH4</td></tr>
+<tr><td>CH3</td><td>USART3_RX、TIM1_CH2、TIM3_CH4</td></tr>
+<tr><td>CH4</td><td>USART1_TX、TIM1_CH4、TIM4_CH2</td></tr>
+<tr><td>CH5</td><td>USART1_RX、TIM1_CH3、TIM2_CH2</td></tr>
+<tr><td>CH6</td><td>I2C2_TX、TIM1_UP、TIM3_CH1</td></tr>
+<tr><td>CH7</td><td>I2C2_RX、TIM1_TRIG、TIM3_CH2</td></tr>
+</table>
+<div class="note key"><span class="t">注意</span>一个通道同一时刻只能服务<b>一个</b>外设请求；选通道时查表选对应外设那个（ADC 用 CH1）。</div>
+
+<h3 class="sec">坑与面试一句话</h3>
+<table>
+<tr><th>坑</th><th>正解</th></tr>
+<tr><td>忘了开 DMA 时钟</td><td>DMA 挂 <b>AHB</b>，用 <code>RCC_AHBPeriphClockCmd</code></td></tr>
+<tr><td>Normal 模式二次搬运不重设 CNDTR</td><td>先 DISABLE → SetCurrDataCounter → ENABLE</td></tr>
+<tr><td>ADC_DR 外设侧开了自增</td><td>单个寄存器必须 <b>PeripheralInc=Disable</b></td></tr>
+<tr><td>M2M 开/关搞错</td><td>SRAM↔SRAM 用 M2M=1（软件触发）；外设↔SRAM 用 M2M=0（硬件请求触发）</td></tr>
+</table>
+<ul>
+<li><b>DMA 是什么</b>：直接存储器存取，外设/存储器间高速搬数据，<b>无须 CPU 干预</b>，省 CPU 资源。</li>
+<li><b>C8T6 资源</b>：DMA1 的 7 个通道；每通道支持软件触发 + 固定硬件触发。</li>
+<li><b>为什么配 DMA</b>：搬大量数据（如 ADC 多通道、串口收发）时，CPU 不用死等，搬完用 TC 中断通知。</li>
+</ul>
+</div></div>
+</div>
+</div>
+
+<div class="panel" id="qz">
+<div class="card open">
+<div class="card-h"><span class="num">交互式自测</span> <span class="arrow">▶</span></div>
+<div class="card-b"><div class="card-b-inner">
+<div id="quiz"></div>
+<div class="quiz-score" id="score">已答 0 / 共 0 题 ｜ 得分 —</div>
+</div></div>
+</div>
+</div>
+</div>
+
+<script>
+const tabs=document.querySelectorAll('.tab'),panels=document.querySelectorAll('.panel');
+tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));panels.forEach(p=>p.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.t).classList.add('active');});
+document.querySelectorAll('.card-h').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('open'));
+document.querySelectorAll('.tip').forEach(t=>{t.addEventListener('click',e=>{const d=document.createElement('div');d.textContent=t.dataset.tip;d.style.cssText='position:fixed;left:'+e.clientX+'px;top:'+(e.clientY-10)+'px;transform:translate(-50%,-100%);background:#0f172a;color:#fff;padding:7px 10px;border-radius:7px;font-size:12px;max-width:240px;z-index:999;box-shadow:0 6px 20px rgba(0,0,0,.3)';document.body.appendChild(d);setTimeout(()=>d.remove(),1800);});});
+
+const structData={
+  peri:{t:'外设寄存器（左侧）',d:'DMA 搬运的一端。可以是普通外设寄存器（ADC_DR、USART 数据寄存器）或 SRAM 数组首地址（M2M 模式时"外设地址"装源数组）。需要配：<b>起始地址 + 数据宽度 + 地址自增</b>。<br>1014 里外设地址 = DataA（因为 M2M 模式复用外设侧装源）。',code:'DMA_InitStructure.DMA_PeripheralBaseAddr = Addr_A; // DataA\nDMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;\nDMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Enable;'},
+  mem:{t:'存储器（右侧）',d:'DMA 搬运的另一端（SRAM 或 Flash）。需要配：<b>起始地址 + 数据宽度 + 地址自增</b>。搬数组（连续地址）要开自增；搬单个寄存器（ADC_DR）要关自增。',code:'DMA_InitStructure.DMA_MemoryBaseAddr = Addr_B; // DataB\nDMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;\nDMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;'},
+  size:{t:'数据宽度',d:'每端 8/16/32 位（Byte/HalfWord/Word）。搬 uint8_t 用 Byte，搬 ADC 12 位结果用 HalfWord。两端宽度不一致时按对齐规则处理（宽→窄保留低字节）。',code:'DMA_PeripheralDataSize_Byte / DMA_MemoryDataSize_Byte（1014）'},
+  inc:{t:'地址自增',d:'开：每搬一次源/目的地址自动 +宽度（数组连续地址）。关：地址固定不动（如 ADC_DR 单个寄存器）。<b>ADC_DR 必须关外设侧自增</b>。',code:'DMA_PeripheralInc_Enable / DMA_MemoryInc_Enable（1014）'},
+  dir:{t:'方向 DIR',d:'决定数据从哪到哪：外设→存储器（PeripheralSRC，外设是源）或 存储器→外设（PeripheralDST，外设是目的）。1014 用 PeripheralSRC（DataA 是"外设侧"源）。',code:'DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;'},
+  cnt:{t:'传输计数器',d:'CNDTR 寄存器，剩余搬运次数，每搬一次 -1，减到 0 传输结束置 TC 标志。DMA_BufferSize 设初值；运行时用 DMA_SetCurrDataCounter 重设。',code:'DMA_InitStructure.DMA_BufferSize = Size; // 4\nDMA_SetCurrDataCounter(DMA1_Channel1, MYDMA_size); // 重设'},
+  rel:{t:'自动重装器',d:'Normal：搬完停（CNDTR=0 通道自动禁用，需重设再搬）。Circular：搬完自动重装回初值循环不停（适合 ADC 连续采样）。',code:'DMA_InitStructure.DMA_Mode = DMA_Mode_Normal; // 或 Circular'},
+  m2m:{t:'M2M 选择',d:'1 = 存储器到存储器（如 SRAM→SRAM），用<b>软件触发</b>，DMA_Cmd(ENABLE) 后立即搬。0 = 外设↔存储器，等<b>外设硬件请求</b>触发。',code:'DMA_InitStructure.DMA_M2M = DMA_M2M_Enable; // 1014 用软件触发'},
+  hwtrig:{t:'硬件触发',d:'M2M=0 时，外设（ADC/串口等）发出请求信号才搬一次。如 ADC 每次 EOC → 自动触发 DMA 搬 ADC_DR；串口 RXNE → 自动搬收到的数据。',code:'ADC_DMACmd(ADC1, ENABLE); // ADC 使能 DMA 请求输出（配合 DMA M2M=0）'},
+  swtrig:{t:'软件触发',d:'M2M=1 时用。配置好 + DMA_Cmd(ENABLE) 即开始搬运，无需外设请求。1014 的 DataA→DataB 就是软件触发。',code:'DMA_InitStructure.DMA_M2M = DMA_M2M_Enable;\nDMA_Cmd(DMA1_Channel1, ENABLE); // 立即开始'},
+  sw:{t:'开关控制 EN',d:'DMA_Cmd(DMAx_Channelx, ENABLE/DISABLE) 总开关。<b>铁律：改任何 DMA 配置前必须先 DISABLE</b>。Normal 模式搬完后通道自动禁用。',code:'DMA_Cmd(DMA1_Channel1, DISABLE);\nDMA_Cmd(DMA1_Channel1, ENABLE);'},
+  tc:{t:'TC 传输完成标志',d:'CNDTR 减到 0 时置位 DMA1_FLAG_TCx。查询：DMA_GetFlagStatus(通道x)。中断法：DMA_ITConfig + NVIC 进 DMA1_Channelx_IRQHandler。',code:'while(DMA_GetFlagStatus(DMA1_FLAG_TC1) == RESET);\nDMA_ClearFlag(DMA1_FLAG_TC1);'}
+};
+const infoBox=document.getElementById('structInfo');
+function clearAct(){document.querySelectorAll('.struct-svg .mod.active, .code-link.active').forEach(x=>x.classList.remove('active'));}
+function showInfo(key){const d=structData[key];if(!d)return;infoBox.innerHTML='<div class="item"><b>'+d.t+'</b>'+d.d+'</div><div class="item"><b>代码对应</b><pre style="margin:6px 0;font-size:11.5px"><code>'+d.code+'</code></pre></div>';}
+document.querySelectorAll('.struct-svg .mod').forEach(g=>{g.addEventListener('click',()=>{const key=g.dataset.m;clearAct();g.classList.add('active');showInfo(key);const link=document.querySelector('.code-link[data-link="'+key+'"]');if(link){link.classList.add('active');link.scrollIntoView({behavior:'smooth',block:'center'});}});});
+document.querySelectorAll('.code-link').forEach(c=>{c.addEventListener('click',()=>{const key=c.dataset.link;clearAct();c.classList.add('active');const g=document.getElementById('m-'+key);if(g)g.classList.add('active');showInfo(key);});});
+
+const memInfo=document.getElementById('memInfo');
+document.querySelectorAll('#memTable tr[data-m]').forEach(tr=>{tr.onclick=()=>{document.querySelectorAll('#memTable tr').forEach(r=>r.classList.remove('sel'));tr.classList.add('sel');const m=tr.dataset.m,a=tr.dataset.a;memInfo.style.display='block';
+const map={flash:'程序代码（.text/.rodata），只读；DMA 可从中读取数据（如查表常量）搬到别处。',sys:'BootLoader 固件，用于串口下载（ISP）。一般程序不访问。',opt:'选项字节：独立配置参数（读保护/看门狗配置等），一般不动。',sram:'临时变量/数组都在这（DataA/DataB/ADValue[]）。DMA 搬运的主要目标之一。<b>易失性：掉电丢失</b>。',peri:'各外设寄存器（ADC_DR 等）。DMA 搬运的另一端，<b>必须配 GPIO/外设时钟才能用</b>。',core:'内核外设（NVIC/SysTick/SCB）。DMA 一般不直接访问这里。'};
+memInfo.innerHTML='<b>'+a+'</b> —— '+map[m];};});
+
+const da=[0x01,0x02,0x03,0x04], db=[null,null,null,null];
+let di=0, dRunning=false, dTimer=null;
+const dLog=document.getElementById('dLog'),dCnt=document.getElementById('dCnt'),dIdx=document.getElementById('dIdx');
+function dRender(){
+  for(let i=0;i<4;i++){const el=document.getElementById('a'+i);el.textContent='0x'+da[i].toString(16).padStart(2,'0');el.className='demo-cell'+(di===i&&dRunning?' hot':'');}
+  for(let i=0;i<4;i++){const el=document.getElementById('b'+i);el.textContent=db[i]===null?'—':'0x'+db[i].toString(16).padStart(2,'0');el.className='demo-cell'+(db[i]!==null?' filled':'');}
+  dCnt.textContent=4-di;dIdx.textContent=di;
+}
+function dStepOnce(){
+  if(di>=4){dLog.innerHTML='<b style="color:#22d3ee">传输完成！TC=1</b> —— Normal 模式自动停止，CNDTR=0，通道自动禁用。';dRunning=false;dRender();return;}
+  db[di]=da[di];
+  dLog.innerHTML='第 '+(di+1)+' 次搬运：从 DataA['+di+'] 读 <b style="color:#f59e0b">0x'+da[di].toString(16).padStart(2,'0')+'</b> → 写入 DataB['+di+']，CNDTR 减 1，源/目的地址自增 +1。';
+  di++;dRender();
+  if(di>=4){setTimeout(()=>{dLog.innerHTML='<b style="color:#22d3ee">传输完成！TC=1</b> —— Normal 模式自动停止，CNDTR=0，通道自动禁用。';dRender();},300);}
+}
+document.getElementById('dStep').onclick=()=>{if(!dRunning&&di<4)dStepOnce();};
+document.getElementById('dStart').onclick=()=>{if(dRunning)return;dRunning=true;dRender();let n=di;dTimer=setInterval(()=>{dStepOnce();if(di>=4){clearInterval(dTimer);dRunning=false;}},700);};
+document.getElementById('dReset').onclick=()=>{clearInterval(dTimer);dRunning=false;di=0;for(let i=0;i<4;i++)db[i]=null;dLog.innerHTML='点击「开始传输」→ 观察：每次从 DataA 读 1 字节 → 写入 DataB → CNDTR 减 1 → 地址自增 → 4 次后置 TC 标志。';dRender();};
+dRender();
+
+const quizData=[
+{type:'c',tag:'基础',q:'DMA 的全称和核心作用是？',opts:['Direct Memory Access，外设/存储器间高速搬运数据、无须 CPU 干预','Direct Memory Address，手动搬数据','Double Memory Access，双倍速访问','Dynamic Memory Allocation，动态内存分配'],ans:0,exp:'DMA = Direct Memory Access 直接存储器存取，硬件自己搬，搬完用 TC 中断通知 CPU。'},
+{type:'c',tag:'资源',q:'STM32F103C8T6 的 DMA 资源是？',opts:['DMA1(7通道)+DMA2(5通道) 共12通道','只有 DMA1 的 7 个通道','只有 DMA2','DMA1 的 5 个通道'],ans:1,exp:'C8T6 没有 DMA2，只有 DMA1（7 个通道）。'},
+{type:'c',tag:'总线',q:'DMA1 挂在哪个总线上？开时钟用哪个函数？',opts:['APB1，RCC_APB1PeriphClockCmd','APB2，RCC_APB2PeriphClockCmd','AHB，RCC_AHBPeriphClockCmd','直接不用开时钟'],ans:2,exp:'DMA 挂 AHB 总线，用 RCC_AHBPeriphClockCmd 开时钟。'},
+{type:'c',tag:'结构图',q:'DMA 基本结构中，记录"剩余搬运次数"的模块是？',opts:['自动重装器','传输计数器 CNDTR','M2M 选择','开关控制'],ans:1,exp:'传输计数器（CNDTR）每搬一次 -1，减到 0 传输结束置 TC。'},
+{type:'c',tag:'结构图',q:'DMA_BufferSize = 4 设置的是结构图中哪个模块？',opts:['方向 DIR','传输计数器初值','数据宽度','M2M'],ans:1,exp:'BufferSize 就是传输计数器初值，决定一共搬几个数据。'},
+{type:'c',tag:'代码位置',q:'DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC 表示？',opts:['外设是目的地址','外设是源地址（外设→存储器）','存储器到存储器','方向无关'],ans:1,exp:'PeripheralSRC = 外设是源，数据从外设侧流向存储器侧。'},
+{type:'c',tag:'代码位置',q:'代码 DMA_SetCurrDataCounter(DMA1_Channel1, MYDMA_size) 对应结构图哪个模块？',opts:['方向 DIR','传输计数器（重设剩余次数）','自动重装器','M2M'],ans:1,exp:'运行时重设 CNDTR，Normal 模式第二次搬运必须重设。'},
+{type:'c',tag:'坑',q:'Normal 模式下，第一次搬运完成后，第二次搬运前必须做什么？',opts:['什么都不用做','重新配 GPIO','先 DISABLE → 重设 CNDTR → 再 ENABLE','把 M2M 改为 0'],ans:2,exp:'Normal 搬完 CNDTR=0 通道自动禁用，必须 DISABLE → SetCurrDataCounter → ENABLE。'},
+{type:'c',tag:'M2M',q:'M2M = DMA_M2M_Enable（存储器到存储器）时，触发方式是？',opts:['ADC 硬件触发','软件触发（DMA_Cmd 后立即搬）','串口请求触发','定时器触发'],ans:1,exp:'M2M=1 用软件触发；M2M=0（外设↔存储器）才等外设硬件请求。'},
+{type:'c',tag:'ADC+DMA',q:'ADC+DMA 时，为什么 ADC_DR 外设侧地址自增必须关闭？',opts:['ADC_DR 是单个寄存器，地址固定','开了会更快','ADC 结果太大','DMA 不支持'],ans:0,exp:'ADC_DR 只有一个地址，开了自增会跳到不存在的地址。'},
+{type:'c',tag:'ADC+DMA',q:'ADC 扫描 7 通道配合 DMA，ADC 结果数组应声明为什么类型？',opts:['uint8_t[7]','uint16_t[7]','float[7]','int32_t[7]'],ans:1,exp:'ADC 12 位结果放 16 位（HalfWord）刚好，uint16_t ADValue[7]。'},
+{type:'c',tag:'循环',q:'想让 ADC 连续扫描、DMA 循环不停搬，DMA_Mode 应设？',opts:['DMA_Mode_Normal','DMA_Mode_Circular','DMA_Mode_PingPong','DMA_Mode_Single'],ans:1,exp:'Circular 循环模式：搬完自动重装 CNDTR，配合 ADC 连续扫描实现"自动持续搬运"。'},
+{type:'multi',tag:'结构图',q:'DMA 基本结构（PPT 103）中，两侧"外设/存储器"各自需要配置哪些参数？（多选）',opts:['起始地址','数据宽度','地址是否自增','触发方式'],ans:[0,1,2],exp:'每侧配：起始地址 + 数据宽度 + 地址自增。触发方式是全局的（M2M/硬件请求），不属于某一侧。'},
+{type:'f',tag:'填空',q:'DMA 搬运完成标志是 TC（Transfer Complete），在 1014 里查询函数是 DMA_GetFlagStatus(____)。',ans:['DMA1_FLAG_TC1','TC1','DMA1_FLAG_TC1'],exp:'通道 1 完成标志 DMA1_FLAG_TC1。'},
+{type:'f',tag:'填空',q:'F103 的 DMA1 挂在 ____ 总线（填 AHB/APB1/APB2）。',ans:['AHB'],exp:'DMA 在 AHB 总线，RCC_AHBPeriphClockCmd 开时钟。'},
+{type:'f',tag:'填空',q:'Normal 模式下传输计数器 CNDTR 减到 ____ 时传输结束并置 TC。',ans:['0','零'],exp:'CNDTR 减到 0 结束。'},
+{type:'f',tag:'填空',q:'ADC 多通道扫描 + DMA，ADC_DR 外设侧自增必须 ____（填开/关）。',ans:['关','关闭','disable'],exp:'单个寄存器，地址固定。'},
+{type:'f',tag:'填空',q:'C8T6 只有 DMA1，共 ____ 个通道。',ans:['7','7个'],exp:'DMA1 有 7 个通道（DMA1_Channel1~7）。'}
+];
+const quizEl=document.getElementById('quiz');let answered=0,score=0;
+quizData.forEach(item=>{const qd=document.createElement('div');qd.className='quiz-q';if(item.type==='c'){qd.innerHTML='<div class="q"><span class="tag">'+item.tag+'</span>'+item.q+'</div>'+item.opts.map((o,oi)=>'<button class="opt" data-oi="'+oi+'"><span class="mk">'+String.fromCharCode(65+oi)+'</span>'+o+'</button>').join('')+'<div class="exp"></div>';qd.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{if(qd.dataset.done)return;qd.dataset.done='1';answered++;const oi=+btn.dataset.oi,exp=qd.querySelector('.exp');if(oi===item.ans){btn.classList.add('correct');score++;exp.innerHTML='✅ 正确！'+item.exp;}else{btn.classList.add('wrong');qd.querySelectorAll('.opt')[item.ans].classList.add('correct');exp.innerHTML='❌ 错。正确答案 '+String.fromCharCode(65+item.ans)+'。'+item.exp;}exp.classList.add('show');updateScore();});}else if(item.type==='multi'){const opts=item.opts.map((o,i)=>'<label class="opt" style="display:flex;align-items:center;gap:6px"><input type="checkbox" style="width:16px;height:16px" data-oi="'+i+'"><span>'+o+'</span></label>').join('');qd.innerHTML='<div class="q"><span class="tag">'+item.tag+'</span>'+item.q+'</div>'+opts+'<button class="btn btn-p" style="margin-top:6px">提交</button><div class="exp"></div>';const btn=qd.querySelector('.btn'),exp=qd.querySelector('.exp');btn.onclick=()=>{if(qd.dataset.done)return;qd.dataset.done='1';answered++;const sel=[...qd.querySelectorAll('input:checked')].map(c=>+c.dataset.oi).sort();const ans=[...item.ans].sort();const same=sel.length===ans.length && sel.every((v,i)=>v===ans[i]);if(same){btn.style.background='var(--green)';score++;exp.innerHTML='✅ 正确！'+item.exp;}else{btn.style.background='var(--red)';exp.innerHTML='❌ 错。你的选择：'+(sel.map(i=>String.fromCharCode(65+i)).join('、')||'空')+'。正确答案 '+ans.map(i=>String.fromCharCode(65+i)).join('、')+'。'+item.exp;}exp.classList.add('show');updateScore();};}else{qd.innerHTML='<div class="q"><span class="tag">'+item.tag+'</span>'+item.q+'</div><input class="fill-in" placeholder="输入答案"><button class="btn btn-p" style="margin-left:6px">检查</button><div class="exp"></div>';const inp=qd.querySelector('.fill-in'),btn=qd.querySelector('.btn'),exp=qd.querySelector('.exp');btn.onclick=()=>{if(qd.dataset.done)return;const v=inp.value.trim().toLowerCase();if(item.ans.some(a=>a.toLowerCase()===v)){qd.dataset.done='1';answered++;score++;exp.innerHTML='✅ 正确！'+item.exp;exp.classList.add('show');btn.style.background='var(--green)';updateScore();}else{exp.innerHTML='❌ 再想想。'+item.exp;exp.classList.add('show');}};}quizEl.appendChild(qd);});
+function updateScore(){document.getElementById('score').textContent='已答 '+answered+' / 共 '+quizData.length+' 题 ｜ 得分 '+score+' / '+quizData.length;}
+updateScore();
+</script>
+</body>
+</html>
