@@ -7,6 +7,8 @@ typedef struct
 	float pot;//电位器位置
 	float pitch,roll;//互补滤波后的姿态角
 	uint16_t count;//物体技术
+	uint16_t ad_raw[4];//4路AD原始码值
+	float voltage[4];//4路电压(V)
 }SensorData_t;
 typedef struct
 {
@@ -18,4 +20,8 @@ typedef struct
 extern SensorData_t g_sensor;
 extern Config_t g_config;
 void App_Init(void);
+void App_Update(void);
+float App_GetVoltage(uint8_t ch);
+float App_GetPotPercent(void);
+
 #endif
